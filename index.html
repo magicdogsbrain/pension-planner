@@ -46,7 +46,7 @@
     .hidden { display: none; }
     .decision-box { background: linear-gradient(135deg, rgba(46,160,67,0.1) 0%, rgba(46,160,67,0.05) 100%); border: 1px solid rgba(46,160,67,0.3); border-radius: 12px; padding: 24px; margin-bottom: 20px; }
     .decision-box.protection { background: linear-gradient(135deg, rgba(248,81,73,0.1) 0%, rgba(248,81,73,0.05) 100%); border-color: rgba(248,81,73,0.3); }
-    .decision-box.csh2-draw { background: linear-gradient(135deg, rgba(126,184,218,0.1) 0%, rgba(126,184,218,0.05) 100%); border-color: rgba(126,184,218,0.3); }
+    .decision-box.cash-draw { background: linear-gradient(135deg, rgba(126,184,218,0.1) 0%, rgba(126,184,218,0.05) 100%); border-color: rgba(126,184,218,0.3); }
     .badge { display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
     .badge-standard { background: var(--success); color: white; }
     .badge-protection { background: var(--danger); color: white; }
@@ -104,9 +104,9 @@
         <h2>📅 Enter Monthly Values</h2>
         <div class="grid grid-4">
           <div><label>Month</label><input type="month" id="entryMonth"></div>
-          <div><label>Equity Fund (£)</label><input type="number" id="entryPACW" placeholder="250000"></div>
-          <div><label>Bond Fund (£)</label><input type="number" id="entryCGT" placeholder="200000"></div>
-          <div><label>Cash Fund (£)</label><input type="number" id="entryCSH2" placeholder="50000"></div>
+          <div><label>Equity Fund (£)</label><input type="number" id="entryEquity" placeholder="250000"></div>
+          <div><label>Bond Fund (£)</label><input type="number" id="entryBond" placeholder="200000"></div>
+          <div><label>Cash Fund (£)</label><input type="number" id="entryCash" placeholder="50000"></div>
         </div>
         <div style="margin-top: 20px; text-align: center;"><button onclick="generateDecision()">Generate Decision</button></div>
       </div>
@@ -133,9 +133,9 @@
         <h2>⚙️ Decision Tool Settings</h2>
         <h3>Fund Minimums (Year 0 baseline)</h3>
         <div class="grid grid-4">
-          <div><label>Equity Minimum (£)</label><input type="number" id="dsPACWMin" value="250000"></div>
-          <div><label>Bond Minimum (£)</label><input type="number" id="dsCGTMin" value="200000"></div>
-          <div><label>Cash Target (£)</label><input type="number" id="dsCSH2Target" value="50000"></div>
+          <div><label>Equity Minimum (£)</label><input type="number" id="dsEquityMin" value="250000"></div>
+          <div><label>Bond Minimum (£)</label><input type="number" id="dsBondMin" value="200000"></div>
+          <div><label>Cash Target (£)</label><input type="number" id="dsCashTarget" value="50000"></div>
           <div><label>Depletion Duration (years)</label><input type="number" id="dsDuration" value="35"></div>
         </div>
         <h3>Income Settings</h3>
@@ -169,9 +169,9 @@
         <h2>🎲 Monte Carlo Simulation</h2>
         <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 20px;">1,000 scenarios. SIPP draw = BRL - Other - State Pension (stays below 40% tax).</p>
         <div class="grid grid-6" style="margin-bottom: 20px;">
-          <div><label>Equity Start (£)</label><input type="number" id="mcPACW" value="250000" oninput="checkStressInputs('mc')"></div>
-          <div><label>Bond Start (£)</label><input type="number" id="mcCGT" value="200000" oninput="checkStressInputs('mc')"></div>
-          <div><label>Cash Start (£)</label><input type="number" id="mcCSH2" value="50000" oninput="checkStressInputs('mc')"></div>
+          <div><label>Equity Start (£)</label><input type="number" id="mcEquity" value="250000" oninput="checkStressInputs('mc')"></div>
+          <div><label>Bond Start (£)</label><input type="number" id="mcBond" value="200000" oninput="checkStressInputs('mc')"></div>
+          <div><label>Cash Start (£)</label><input type="number" id="mcCash" value="50000" oninput="checkStressInputs('mc')"></div>
           <div><label>Years</label><input type="number" id="mcYears" value="35"></div>
           <div><label>Sample Lines</label><input type="number" id="mcSampleLines" value="100"></div>
           <div style="display: flex; align-items: flex-end;"><button onclick="runMonteCarlo()" style="width: 100%;">Run</button></div>
@@ -184,9 +184,9 @@
       <div class="card">
         <h2>📜 Historical Sequence Analysis</h2>
         <div class="grid grid-5" style="margin-bottom: 20px;">
-          <div><label>Equity Start (£)</label><input type="number" id="histPACW" value="250000" oninput="checkStressInputs('hist')"></div>
-          <div><label>Bond Start (£)</label><input type="number" id="histCGT" value="200000" oninput="checkStressInputs('hist')"></div>
-          <div><label>Cash Start (£)</label><input type="number" id="histCSH2" value="50000" oninput="checkStressInputs('hist')"></div>
+          <div><label>Equity Start (£)</label><input type="number" id="histEquity" value="250000" oninput="checkStressInputs('hist')"></div>
+          <div><label>Bond Start (£)</label><input type="number" id="histBond" value="200000" oninput="checkStressInputs('hist')"></div>
+          <div><label>Cash Start (£)</label><input type="number" id="histCash" value="50000" oninput="checkStressInputs('hist')"></div>
           <div><label>Years</label><input type="number" id="histYears" value="35"></div>
           <div style="display: flex; align-items: flex-end;"><button onclick="runHistorical()" style="width: 100%;">Run</button></div>
         </div>
@@ -198,9 +198,9 @@
       <div class="card">
         <h2>⚡ Stress Scenarios</h2>
         <div class="grid grid-4" style="margin-bottom: 20px;">
-          <div><label>Equity Start (£)</label><input type="number" id="scenPACW" value="250000" oninput="checkStressInputs('scen')"></div>
-          <div><label>Bond Start (£)</label><input type="number" id="scenCGT" value="200000" oninput="checkStressInputs('scen')"></div>
-          <div><label>Cash Start (£)</label><input type="number" id="scenCSH2" value="50000" oninput="checkStressInputs('scen')"></div>
+          <div><label>Equity Start (£)</label><input type="number" id="scenEquity" value="250000" oninput="checkStressInputs('scen')"></div>
+          <div><label>Bond Start (£)</label><input type="number" id="scenBond" value="200000" oninput="checkStressInputs('scen')"></div>
+          <div><label>Cash Start (£)</label><input type="number" id="scenCash" value="50000" oninput="checkStressInputs('scen')"></div>
           <div style="display: flex; align-items: flex-end;"><button onclick="runScenarios()" style="width: 100%;">Run</button></div>
         </div>
         <div id="scenInputWarning" class="input-warning hidden"></div>
@@ -235,9 +235,9 @@
         
         <h3>Fund Minimums (Year 0, real terms)</h3>
         <div class="grid grid-4">
-          <div><label>Equity Minimum (£)</label><input type="number" id="ssPACWMin" value="250000"></div>
-          <div><label>Bond Minimum (£)</label><input type="number" id="ssCGTMin" value="200000"></div>
-          <div><label>Cash Target (£)</label><input type="number" id="ssCSH2Target" value="50000"></div>
+          <div><label>Equity Minimum (£)</label><input type="number" id="ssEquityMin" value="250000"></div>
+          <div><label>Bond Minimum (£)</label><input type="number" id="ssBondMin" value="200000"></div>
+          <div><label>Cash Target (£)</label><input type="number" id="ssCashTarget" value="50000"></div>
           <div><label>Duration (years)</label><input type="number" id="ssDuration" value="35"></div>
         </div>
         <div class="info-box">
@@ -289,7 +289,7 @@
           </div>
         </div>
         <div class="info-box" style="margin-top:12px;">
-          <strong>Disable Protection:</strong> Use this when testing all-CSH2 or conservative strategies where protection mode doesn't apply.
+          <strong>Disable Protection:</strong> Use this when testing all-Cash or conservative strategies where protection mode doesn't apply.
         </div>
 
         <h3>Break Glass HODL (RICA - Ruffer Investment Company)</h3>
@@ -382,7 +382,7 @@ function getDecisionDB() {
   var raw = localStorage.getItem(DECISION_KEY);
   if (!raw) {
     var db = { 
-      settings: { pacwMin: 250000, cgtMin: 200000, csh2Target: 50000, duration: 30, baseSalary: 30000, protectionFactor: 20, recoveryBuffer: 10000, consecutiveLimit: 3 },
+      settings: { equityMin: 250000, bondMin: 200000, cashTarget: 50000, duration: 30, baseSalary: 30000, protectionFactor: 20, recoveryBuffer: 10000, consecutiveLimit: 3 },
       taxYears: {
         '25/26': { pa: 12570, brl: 50270, hrl: 125140, cpi: 0.025, other: 0, statePension: 0 }
       },
@@ -408,7 +408,7 @@ function getStressDB() {
   if (!raw) {
     var db = {
       settings: {
-        pacwMin: 250000, cgtMin: 200000, csh2Target: 50000, duration: 30,
+        equityMin: 250000, bondMin: 200000, cashTarget: 50000, duration: 30,
         pa: 12570, brl: 50270, hrl: 125140, taxMode: 'frozen',
         other: 0, statePension: 12000, statePensionYear: 12,
         protectionMult: 0.8, consecutiveLimit: 3, disableProtection: false,
@@ -434,7 +434,7 @@ function saveStressDB(db, preserveTimestamp) {
   hasUnsavedChanges = true; // Mark that we have changes to export
 }
 
-// Glidepath: growth funds deplete, CSH2 just inflates
+// Glidepath: growth funds deplete, Cash just inflates
 function calcGlidepath(base, year, duration, cumInf, isGrowth) {
   if (isGrowth) {
     var depletion = Math.max(0, 1 - year / duration);
@@ -493,32 +493,32 @@ function analyzeFailure(result, returns, config, startYear) {
 
   // Analyze fund performance
   var initial = result.hist[0];
-  var pacwDrop = 0, cgtDrop = 0, csh2Drop = 0;
-  var pacwMin = initial.pacw, cgtMin = initial.cgt, csh2Min = initial.csh2;
+  var equityDrop = 0, bondDrop = 0, cashDrop = 0;
+  var equityMin = initial.equity, bondMin = initial.bond, cashMin = initial.cash;
 
   result.hist.forEach(function(h) {
-    if (h.pacw < pacwMin) pacwMin = h.pacw;
-    if (h.cgt < cgtMin) cgtMin = h.cgt;
-    if (h.csh2 < csh2Min) csh2Min = h.csh2;
+    if (h.equity < equityMin) equityMin = h.equity;
+    if (h.bond < bondMin) bondMin = h.bond;
+    if (h.cash < cashMin) cashMin = h.cash;
   });
 
-  pacwDrop = initial.pacw > 0 ? (pacwMin - initial.pacw) / initial.pacw : 0;
-  cgtDrop = initial.cgt > 0 ? (cgtMin - initial.cgt) / initial.cgt : 0;
-  csh2Drop = initial.csh2 > 0 ? (csh2Min - initial.csh2) / initial.csh2 : 0;
+  equityDrop = initial.equity > 0 ? (equityMin - initial.equity) / initial.equity : 0;
+  bondDrop = initial.bond > 0 ? (bondMin - initial.bond) / initial.bond : 0;
+  cashDrop = initial.cash > 0 ? (cashMin - initial.cash) / initial.cash : 0;
 
   analysis.fundAnalysis = {
-    pacwDrop: pacwDrop,
-    cgtDrop: cgtDrop,
-    csh2Depletion: csh2Drop,
-    pacwMin: pacwMin,
-    cgtMin: cgtMin,
-    csh2Min: csh2Min
+    equityDrop: equityDrop,
+    bondDrop: bondDrop,
+    cashDepletion: cashDrop,
+    equityMin: equityMin,
+    bondMin: bondMin,
+    cashMin: cashMin
   };
 
   // Determine worst affected fund
-  if (pacwDrop < cgtDrop && pacwDrop < csh2Drop) {
+  if (equityDrop < bondDrop && equityDrop < cashDrop) {
     analysis.worstFund = 'Equity';
-  } else if (cgtDrop < csh2Drop) {
+  } else if (bondDrop < cashDrop) {
     analysis.worstFund = 'Bond';
   } else {
     analysis.worstFund = 'Cash';
@@ -526,7 +526,7 @@ function analyzeFailure(result, returns, config, startYear) {
 
   // Calculate recommendations
   if (result.failed) {
-    // Estimate extra CSH2 buffer needed
+    // Estimate extra Cash buffer needed
     var monthlyDraw = initial.sippDraw ? initial.sippDraw / 12 : 3000;
     var failYear = result.failMonth ? result.failMonth / 12 : result.years;
     var monthsShort = (config.years - failYear) * 12;
@@ -535,7 +535,7 @@ function analyzeFailure(result, returns, config, startYear) {
     if (extraBuffer > 0) {
       analysis.recommendations.push({
         type: 'buffer',
-        text: 'Increase CSH2 buffer by £' + extraBuffer.toLocaleString(),
+        text: 'Increase Cash buffer by £' + extraBuffer.toLocaleString(),
         amount: extraBuffer
       });
     }
@@ -626,19 +626,19 @@ function showStressTab(tab) {
 // Check if stress test inputs differ from settings minimums
 function checkStressInputs(prefix) {
   var s = getStressDB().settings;
-  var pacw = +document.getElementById(prefix + 'Equity').value;
-  var cgt = +document.getElementById(prefix + 'Bond').value;
-  var csh2 = +document.getElementById(prefix + 'Cash').value;
+  var equity = +document.getElementById(prefix + 'Equity').value;
+  var bond = +document.getElementById(prefix + 'Bond').value;
+  var cash = +document.getElementById(prefix + 'Cash').value;
   var warningEl = document.getElementById(prefix + 'InputWarning');
 
   var diffs = [];
-  if (pacw !== s.pacwMin) diffs.push('Equity: £' + pacw.toLocaleString() + ' vs min £' + s.pacwMin.toLocaleString());
-  if (cgt !== s.cgtMin) diffs.push('Bond: £' + cgt.toLocaleString() + ' vs min £' + s.cgtMin.toLocaleString());
-  if (csh2 !== s.csh2Target) diffs.push('Cash: £' + csh2.toLocaleString() + ' vs target £' + s.csh2Target.toLocaleString());
+  if (equity !== s.equityMin) diffs.push('Equity: £' + equity.toLocaleString() + ' vs min £' + s.equityMin.toLocaleString());
+  if (bond !== s.bondMin) diffs.push('Bond: £' + bond.toLocaleString() + ' vs min £' + s.bondMin.toLocaleString());
+  if (cash !== s.cashTarget) diffs.push('Cash: £' + cash.toLocaleString() + ' vs target £' + s.cashTarget.toLocaleString());
 
   if (diffs.length > 0) {
-    var totalStart = pacw + cgt + csh2;
-    var totalMin = s.pacwMin + s.cgtMin + s.csh2Target;
+    var totalStart = equity + bond + cash;
+    var totalMin = s.equityMin + s.bondMin + s.cashTarget;
     var buffer = totalStart - totalMin;
     var bufferPct = totalMin > 0 ? Math.round((buffer / totalMin) * 100) : 0;
     var bufferStr = (buffer >= 0 ? '+' : '') + '£' + buffer.toLocaleString() + ' (' + (buffer >= 0 ? '+' : '') + bufferPct + '%)';
@@ -665,32 +665,32 @@ function getYearNum(dateStr) {
 function generateDecision() {
   var db = getDecisionDB();
   var dateStr = document.getElementById('entryMonth').value;
-  var pacwVal = document.getElementById('entryPACW').value;
-  var cgtVal = document.getElementById('entryCGT').value;
-  var csh2Val = document.getElementById('entryCSH2').value;
+  var equityVal = document.getElementById('entryEquity').value;
+  var bondVal = document.getElementById('entryBond').value;
+  var cashVal = document.getElementById('entryCash').value;
 
   // Validate all required fields
   var missing = [];
   if (!dateStr) missing.push('Month');
-  if (pacwVal === '' || pacwVal === null) missing.push('Equity Fund');
-  if (cgtVal === '' || cgtVal === null) missing.push('CGT Balance');
-  if (csh2Val === '' || csh2Val === null) missing.push('CSH2 Balance');
+  if (equityVal === '' || equityVal === null) missing.push('Equity Fund');
+  if (bondVal === '' || bondVal === null) missing.push('Bond Balance');
+  if (cashVal === '' || cashVal === null) missing.push('Cash Balance');
 
   if (missing.length > 0) {
     alert('Please fill in the following fields:\n\n• ' + missing.join('\n• '));
     return;
   }
 
-  var pacw = +pacwVal;
-  var cgt = +cgtVal;
-  var csh2 = +csh2Val;
+  var equity = +equityVal;
+  var bond = +bondVal;
+  var cash = +cashVal;
 
-  if (isNaN(pacw) || isNaN(cgt) || isNaN(csh2)) {
+  if (isNaN(equity) || isNaN(bond) || isNaN(cash)) {
     alert('Please enter valid numbers for all balance fields.');
     return;
   }
 
-  var d = calcDecision(dateStr, pacw, cgt, csh2, db);
+  var d = calcDecision(dateStr, equity, bond, cash, db);
   var idx = db.history.findIndex(function(h) { return h.date === dateStr; });
   if (idx >= 0) db.history[idx] = d; else db.history.push(d);
   db.history.sort(function(a, b) { return a.date.localeCompare(b.date); });
@@ -698,7 +698,7 @@ function generateDecision() {
   renderDecisionOutput(d);
 }
 
-function calcDecision(dateStr, pacw, cgt, csh2, db) {
+function calcDecision(dateStr, equity, bond, cash, db) {
   var p = dateStr.split('-'), year = +p[0], month = +p[1];
   var s = db.settings, ty = db.taxYears[getTaxYear(dateStr)] || db.taxYears['25/26'] || { pa: 12570, brl: 50270, hrl: 125140, cpi: 0.025, other: 0, statePension: 0 };
   // Migration: if old data has 'aviva' but not 'other', copy it
@@ -712,11 +712,11 @@ function calcDecision(dateStr, pacw, cgt, csh2, db) {
     cumInf *= 1 + ((db.taxYears[yStr] || {}).cpi || 0.025);
   }
   
-  var adjPACW = Math.round(calcGlidepath(s.pacwMin, yearNum, s.duration, cumInf, true));
-  var adjCGT = Math.round(calcGlidepath(s.cgtMin, yearNum, s.duration, cumInf, true));
-  var adjCSH2 = Math.round(calcGlidepath(s.csh2Target, yearNum, s.duration, cumInf, false));
+  var adjEquity = Math.round(calcGlidepath(s.equityMin, yearNum, s.duration, cumInf, true));
+  var adjBond = Math.round(calcGlidepath(s.bondMin, yearNum, s.duration, cumInf, true));
+  var adjCash = Math.round(calcGlidepath(s.cashTarget, yearNum, s.duration, cumInf, false));
   
-  var totalGrowth = pacw + cgt, minGrowth = adjPACW + adjCGT;
+  var totalGrowth = equity + bond, minGrowth = adjEquity + adjBond;
   var inProtection = false, consec = 0;
 
   // Get prior history for protection mode calculation
@@ -724,7 +724,7 @@ function calcDecision(dateStr, pacw, cgt, csh2, db) {
     return h.date < dateStr;
   });
 
-  // Count consecutive CSH2 draws from history
+  // Count consecutive Cash draws from history
   for (var i = priorHistory.length - 1; i >= 0; i--) {
     if (priorHistory[i].source === 'Cash') consec++; else break;
   }
@@ -736,8 +736,8 @@ function calcDecision(dateStr, pacw, cgt, csh2, db) {
   }
 
   // Enter NEW protection if:
-  // 1. We're below minimum (will draw from CSH2)
-  // 2. We've had enough consecutive CSH2 draws
+  // 1. We're below minimum (will draw from Cash)
+  // 2. We've had enough consecutive Cash draws
   if (!inProtection && totalGrowth < minGrowth && consec + 1 >= s.consecutiveLimit) {
     inProtection = true;
   }
@@ -841,20 +841,20 @@ function calcDecision(dateStr, pacw, cgt, csh2, db) {
   // Store stdSipp for future catch-up calculations
   var stdSippMonthly = (BRL - (OTHER + STATE)) / 12;
   
-  var source, reason, dPACW = 0, dCGT = 0, dCSH2 = 0, warn = '';
+  var source, reason, dEquity = 0, dBond = 0, dCash = 0, warn = '';
   if (!inProtection && totalGrowth >= minGrowth + sipp) {
     source = 'Growth';
-    var pS = Math.max(0, pacw - adjPACW), cS = Math.max(0, cgt - adjCGT), tot = pS + cS;
-    if (tot > 0) { dPACW = sipp * pS / tot; dCGT = sipp * cS / tot; reason = 'Healthy'; }
-    else { source = 'Cash'; dCSH2 = sipp; reason = 'At min'; }
+    var pS = Math.max(0, equity - adjEquity), cS = Math.max(0, bond - adjBond), tot = pS + cS;
+    if (tot > 0) { dEquity = sipp * pS / tot; dBond = sipp * cS / tot; reason = 'Healthy'; }
+    else { source = 'Cash'; dCash = sipp; reason = 'At min'; }
   } else {
-    source = 'Cash'; dCSH2 = sipp;
+    source = 'Cash'; dCash = sipp;
     reason = inProtection ? 'Protection' : 'Below min';
-    if (csh2 < sipp) warn = 'CSH2 low!';
+    if (cash < sipp) warn = 'Cash low!';
   }
   
   var rebal = '';
-  var pDev = pacw - adjPACW, cDev = cgt - adjCGT;
+  var pDev = equity - adjEquity, cDev = bond - adjBond;
   if (pDev > 5000 && cDev < -5000) {
     var mv = Math.floor(Math.min(pDev, -cDev) / 1000) * 1000;
     if (mv >= 5000) rebal = 'Move £' + mv.toLocaleString() + ' Equity→Bond';
@@ -863,28 +863,28 @@ function calcDecision(dateStr, pacw, cgt, csh2, db) {
     if (mv >= 5000) rebal = 'Move £' + mv.toLocaleString() + ' Bond→Equity';
   }
   
-  // CSH2 replenishment suggestion
-  var csh2Replenish = '';
-  var csh2Shortfall = adjCSH2 - csh2;
-  if (csh2Shortfall > 5000 && source === 'Growth' && !inProtection) {
+  // Cash replenishment suggestion
+  var cashReplenish = '';
+  var cashShortfall = adjCash - cash;
+  if (cashShortfall > 5000 && source === 'Growth' && !inProtection) {
     // Only suggest replenishment when drawing from growth (healthy state)
     var excess = totalGrowth - minGrowth - sipp;
     if (excess > 10000) {
       // Suggest replenishing up to 30% of shortfall or 50% of excess, whichever is smaller
-      var repAmount = Math.floor(Math.min(csh2Shortfall * 0.3, excess * 0.5) / 1000) * 1000;
+      var repAmount = Math.floor(Math.min(cashShortfall * 0.3, excess * 0.5) / 1000) * 1000;
       if (repAmount >= 5000) {
-        csh2Replenish = 'Replenish Cash: Move £' + repAmount.toLocaleString() + ' from growth funds';
+        cashReplenish = 'Replenish Cash: Move £' + repAmount.toLocaleString() + ' from growth funds';
       }
     }
   }
   
   return {
-    date: dateStr, taxYear: getTaxYear(dateStr), pacw: pacw, cgt: cgt, csh2: csh2,
-    total: pacw + cgt + csh2, source: source, inProtection: inProtection,
+    date: dateStr, taxYear: getTaxYear(dateStr), equity: equity, bond: bond, cash: cash,
+    total: equity + bond + cash, source: source, inProtection: inProtection,
     consec: consec, sipp: sipp, isa: isa, other: OTHER / 12, state: STATE / 12,
-    dEquity: dPACW, dBond: dCGT, dCash: dCSH2, rebal: rebal, warn: warn, reason: reason,
-    note: note, adjEquity: adjPACW, adjBond: adjCGT, adjCash: adjCSH2, yearNum: yearNum,
-    stdSipp: stdSippMonthly, boostAmount: boostAmount, csh2Replenish: csh2Replenish,
+    dEquity: dEquity, dBond: dBond, dCash: dCash, rebal: rebal, warn: warn, reason: reason,
+    note: note, adjEquity: adjEquity, adjBond: adjBond, adjCash: adjCash, yearNum: yearNum,
+    stdSipp: stdSippMonthly, boostAmount: boostAmount, cashReplenish: cashReplenish,
     totalGrowth: totalGrowth, minGrowth: minGrowth
   };
 }
@@ -893,7 +893,7 @@ function renderDecisionOutput(d) {
   var cls = 'decision-box', badge = '<span class="badge badge-standard">Standard</span>';
   if (d.inProtection) { cls += ' protection'; badge = '<span class="badge badge-protection">Protection</span>'; }
   else if (d.boostAmount > 50) { badge = '<span class="badge" style="background:#2ea043;color:white;">Tax Boost</span>'; }
-  else if (d.source === 'Cash') cls += ' csh2-draw';
+  else if (d.source === 'Cash') cls += ' cash-draw';
   
   var src = d.source === 'Growth' ? 'Equity: £' + d.dEquity.toFixed(0) + ' | Bond: £' + d.dBond.toFixed(0) : 'Cash: £' + d.dCash.toFixed(0);
   var grossTaxable = (d.sipp + d.other + d.state) * 12;
@@ -921,7 +921,7 @@ function renderDecisionOutput(d) {
   if (d.warn) h += '<div class="alert alert-danger" style="margin-top:12px;">' + d.warn + '</div>';
   if (d.boostAmount > 50) h += '<div class="alert alert-success" style="margin-top:12px;">📈 Tax Boost: +£' + d.boostAmount.toFixed(0) + '/mo catch-up from protection shortfall</div>';
   if (d.rebal) h += '<div class="alert alert-warning" style="margin-top:12px;">⚖️ ' + d.rebal + '</div>';
-  if (d.csh2Replenish) h += '<div class="alert alert-info" style="margin-top:12px;">💰 ' + d.csh2Replenish + '</div>';
+  if (d.cashReplenish) h += '<div class="alert alert-info" style="margin-top:12px;">💰 ' + d.cashReplenish + '</div>';
   
   // Debug info
   h += '<div class="alert alert-info" style="margin-top:12px;font-size:11px;">';
@@ -1005,9 +1005,9 @@ function clearHistory() { if (!confirm('Clear all?')) return; var db = getDecisi
 
 function loadDecisionSettings() {
   var s = getDecisionDB().settings;
-  document.getElementById('dsPACWMin').value = s.pacwMin;
-  document.getElementById('dsCGTMin').value = s.cgtMin;
-  document.getElementById('dsCSH2Target').value = s.csh2Target;
+  document.getElementById('dsEquityMin').value = s.equityMin;
+  document.getElementById('dsBondMin').value = s.bondMin;
+  document.getElementById('dsCashTarget').value = s.cashTarget;
   document.getElementById('dsDuration').value = s.duration;
   document.getElementById('dsBaseSalary').value = s.baseSalary;
   document.getElementById('dsProtectionFactor').value = s.protectionFactor;
@@ -1017,9 +1017,9 @@ function loadDecisionSettings() {
 
 function saveDecisionSettings() {
   var db = getDecisionDB();
-  db.settings.pacwMin = +document.getElementById('dsPACWMin').value;
-  db.settings.cgtMin = +document.getElementById('dsCGTMin').value;
-  db.settings.csh2Target = +document.getElementById('dsCSH2Target').value;
+  db.settings.equityMin = +document.getElementById('dsEquityMin').value;
+  db.settings.bondMin = +document.getElementById('dsBondMin').value;
+  db.settings.cashTarget = +document.getElementById('dsCashTarget').value;
   db.settings.duration = +document.getElementById('dsDuration').value;
   db.settings.baseSalary = +document.getElementById('dsBaseSalary').value;
   db.settings.protectionFactor = +document.getElementById('dsProtectionFactor').value;
@@ -1031,8 +1031,8 @@ function saveDecisionSettings() {
 // STRESS TESTER
 function seededRng(seed) { var s = seed; return function() { s = Math.sin(s) * 10000; return s - Math.floor(s); }; }
 function gauss(m, std, rng) { return Math.sqrt(-2 * Math.log(rng())) * Math.cos(2 * Math.PI * rng()) * std + m; }
-function cgtReturn(inf, eq, prevInf, rng) {
-  // CGT-style adaptive allocation with realistic imperfections
+function bondReturn(inf, eq, prevInf, rng) {
+  // Bond-style adaptive allocation with realistic imperfections
   
   // Base allocation (normal times)
   var linkerWeight = 0.15;   // Index-linked gilts
@@ -1094,7 +1094,7 @@ function cgtReturn(inf, eq, prevInf, rng) {
 function simulate(config, returns, seed) {
   var rng = seededRng(seed || 42);
   var s = getStressDB().settings;
-  var pacw = config.pacwStart, cgt = config.cgtStart, csh2 = config.csh2Start;
+  var equity = config.equityStart, bond = config.bondStart, cash = config.cashStart;
   var consec = 0, prot = false, cumInf = 1;
   var hist = [], failed = false, failMonth = null;
   var protMonths = 0, maxConsec = 0, curStreak = 0;
@@ -1132,9 +1132,9 @@ function simulate(config, returns, seed) {
     if (year === 0 && month === 0) yearlyInf = [];
     
     // Glidepath minimums
-    var pacwMin = calcGlidepath(s.pacwMin, year, s.duration, cumInf, true);
-    var cgtMin = calcGlidepath(s.cgtMin, year, s.duration, cumInf, true);
-    var csh2Max = calcGlidepath(s.csh2Target, year, s.duration, cumInf, false);
+    var equityMin = calcGlidepath(s.equityMin, year, s.duration, cumInf, true);
+    var bondMin = calcGlidepath(s.bondMin, year, s.duration, cumInf, true);
+    var cashMax = calcGlidepath(s.cashTarget, year, s.duration, cumInf, false);
     
     // SIPP draw with Other capped at 4% CPI
     var tax = calcSIPPDraw(s, year, cumInf, yearlyInf);
@@ -1152,12 +1152,12 @@ function simulate(config, returns, seed) {
     var inf = returns.inflation[year] || 0.025;
     var prevInf = year > 0 ? (returns.inflation[year - 1] || 0.025) : inf;
     var eq = returns.equity[year] || 0;
-    var cgtR = cgtReturn(inf, eq, prevInf, rng);
-    var csh2R = Math.max(0.005, inf + 0.012);
+    var bondR = bondReturn(inf, eq, prevInf, rng);
+    var cashR = Math.max(0.005, inf + 0.012);
     
-    pacw *= (1 + Math.pow(1 + eq, 1/12) - 1);
-    cgt *= (1 + Math.pow(1 + cgtR, 1/12) - 1);
-    csh2 *= (1 + Math.pow(1 + csh2R, 1/12) - 1);
+    equity *= (1 + Math.pow(1 + eq, 1/12) - 1);
+    bond *= (1 + Math.pow(1 + bondR, 1/12) - 1);
+    cash *= (1 + Math.pow(1 + cashR, 1/12) - 1);
 
     // HODL: RICA (Ruffer Investment Company) - multi-asset absolute return fund
     // Key characteristics from historical data (2004-2025):
@@ -1191,7 +1191,7 @@ function simulate(config, returns, seed) {
       hodl *= (1 + Math.pow(1 + hodlR, 1/12) - 1);
     }
 
-    var totalGrowth = pacw + cgt, minGrowth = pacwMin + cgtMin;
+    var totalGrowth = equity + bond, minGrowth = equityMin + bondMin;
     
     // Exit protection
     if (prot && totalGrowth > minGrowth + 5000) {
@@ -1224,32 +1224,32 @@ function simulate(config, returns, seed) {
     
     // Withdraw
     if (!prot && totalGrowth >= minGrowth + monthDraw) {
-      var pS = Math.max(0, pacw - pacwMin), cS = Math.max(0, cgt - cgtMin), tot = pS + cS;
+      var pS = Math.max(0, equity - equityMin), cS = Math.max(0, bond - bondMin), tot = pS + cS;
       if (tot > 0) {
-        pacw -= monthDraw * pS / tot;
-        cgt -= monthDraw * cS / tot;
+        equity -= monthDraw * pS / tot;
+        bond -= monthDraw * cS / tot;
         consec = 0;
-        // Replenish CSH2
-        if (csh2 < csh2Max) {
+        // Replenish Cash
+        if (cash < cashMax) {
           var excess = totalGrowth - minGrowth - monthDraw;
           if (excess > 5000) {
-            var rep = Math.min((csh2Max - csh2) * 0.3, excess * 0.5);
-            pacw -= rep * pS / tot;
-            cgt -= rep * cS / tot;
-            csh2 += rep;
+            var rep = Math.min((cashMax - cash) * 0.3, excess * 0.5);
+            equity -= rep * pS / tot;
+            bond -= rep * cS / tot;
+            cash += rep;
           }
         }
-      } else { csh2 -= monthDraw; }
+      } else { cash -= monthDraw; }
     } else {
-      if (csh2 >= monthDraw) {
-        csh2 -= monthDraw;
+      if (cash >= monthDraw) {
+        cash -= monthDraw;
         consec++;
         if (!s.disableProtection && consec >= s.consecutiveLimit) prot = true;
       } else {
-        var rem = monthDraw - csh2;
-        csh2 = 0;
-        if (cgt > rem) cgt -= rem;
-        else if (pacw > rem) pacw -= rem;
+        var rem = monthDraw - cash;
+        cash = 0;
+        if (bond > rem) bond -= rem;
+        else if (equity > rem) equity -= rem;
         else if (hodl > rem) {
           // BREAK GLASS: Use HODL emergency reserve
           hodl -= rem;
@@ -1261,17 +1261,17 @@ function simulate(config, returns, seed) {
     }
 
     if (month % 12 === 0) {
-      hist.push({ year: year, total: pacw + cgt + csh2, pacw: pacw, cgt: cgt, csh2: csh2, hodl: hodl, prot: prot, pacwMin: pacwMin, cgtMin: cgtMin, csh2Max: csh2Max, sippDraw: annualDraw });
+      hist.push({ year: year, total: equity + bond + cash, equity: equity, bond: bond, cash: cash, hodl: hodl, prot: prot, equityMin: equityMin, bondMin: bondMin, cashMax: cashMax, sippDraw: annualDraw });
     }
     if (failed) break;
   }
   maxConsec = Math.max(maxConsec, curStreak);
-  return { hist: hist, failed: failed, failMonth: failMonth, years: failed ? failMonth / 12 : config.years, final: pacw + cgt + csh2, finalHodl: hodl, hodlUsed: hodlUsed, hodlUsedMonth: hodlUsedMonth, protMonths: protMonths, maxConsec: maxConsec, seed: seed };
+  return { hist: hist, failed: failed, failMonth: failMonth, years: failed ? failMonth / 12 : config.years, final: equity + bond + cash, finalHodl: hodl, hodlUsed: hodlUsed, hodlUsedMonth: hodlUsedMonth, protMonths: protMonths, maxConsec: maxConsec, seed: seed };
 }
 
 function runMonteCarlo() {
   var runs = 1000, samples = +document.getElementById('mcSampleLines').value || 100;
-  var cfg = { pacwStart: +document.getElementById('mcPACW').value, cgtStart: +document.getElementById('mcCGT').value, csh2Start: +document.getElementById('mcCSH2').value, years: +document.getElementById('mcYears').value };
+  var cfg = { equityStart: +document.getElementById('mcEquity').value, bondStart: +document.getElementById('mcBond').value, cashStart: +document.getElementById('mcCash').value, years: +document.getElementById('mcYears').value };
   var yrs = Object.keys(EQUITY_RETURNS).map(Number).sort(function(a,b){return a-b;});
   var results = [];
   
@@ -1316,7 +1316,7 @@ function runMonteCarlo() {
     });
   }
   
-  var glide = results[0].hist.map(function(h) { return { year: h.year, min: h.pacwMin + h.cgtMin + h.csh2Max }; });
+  var glide = results[0].hist.map(function(h) { return { year: h.year, min: h.equityMin + h.bondMin + h.cashMax }; });
   
   var step = Math.floor(runs / samples);
   var sampleRuns = [];
@@ -1340,8 +1340,8 @@ function runMonteCarlo() {
   var maxProt = Math.max.apply(null, protArr);
   
   // Calculate buffers
-  var totalStart = cfg.pacwStart + cfg.cgtStart + cfg.csh2Start;
-  var totalMin = s.pacwMin + s.cgtMin + s.csh2Target;
+  var totalStart = cfg.equityStart + cfg.bondStart + cfg.cashStart;
+  var totalMin = s.equityMin + s.bondMin + s.cashTarget;
   var buffer = totalStart - totalMin;
   var bufferPct = totalMin > 0 ? Math.round((buffer / totalMin) * 100) : 0;
 
@@ -1354,8 +1354,8 @@ function runMonteCarlo() {
     h += '<div class="' + bufferClass + '" style="margin-bottom:20px;">';
     h += '<strong>' + bufferIcon + ' Starting Values vs Settings:</strong><br>';
     h += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:10px 0;">';
-    h += '<div><strong>Starting:</strong> £' + totalStart.toLocaleString() + '<br><span style="font-size:11px;color:var(--text-muted);">Equity: £' + cfg.pacwStart.toLocaleString() + ' | Bond: £' + cfg.cgtStart.toLocaleString() + ' | Cash: £' + cfg.csh2Start.toLocaleString() + '</span></div>';
-    h += '<div><strong>Minimums (Settings):</strong> £' + totalMin.toLocaleString() + '<br><span style="font-size:11px;color:var(--text-muted);">Equity: £' + s.pacwMin.toLocaleString() + ' | Bond: £' + s.cgtMin.toLocaleString() + ' | Cash: £' + s.csh2Target.toLocaleString() + '</span></div>';
+    h += '<div><strong>Starting:</strong> £' + totalStart.toLocaleString() + '<br><span style="font-size:11px;color:var(--text-muted);">Equity: £' + cfg.equityStart.toLocaleString() + ' | Bond: £' + cfg.bondStart.toLocaleString() + ' | Cash: £' + cfg.cashStart.toLocaleString() + '</span></div>';
+    h += '<div><strong>Minimums (Settings):</strong> £' + totalMin.toLocaleString() + '<br><span style="font-size:11px;color:var(--text-muted);">Equity: £' + s.equityMin.toLocaleString() + ' | Bond: £' + s.bondMin.toLocaleString() + ' | Cash: £' + s.cashTarget.toLocaleString() + '</span></div>';
     h += '<div><strong>Buffer:</strong> ' + (buffer >= 0 ? '+' : '') + '£' + buffer.toLocaleString() + ' (' + (buffer >= 0 ? '+' : '') + bufferPct + '%)<br><span style="font-size:11px;color:var(--text-muted);">Cushion above glidepath floor</span></div>';
     h += '</div>';
     if (buffer > totalMin * 0.5) {
@@ -1425,10 +1425,10 @@ function runMonteCarlo() {
   document.getElementById('mcResults').innerHTML = h;
   
   // Store data globally for tooltip access
-  window.mcData = { runs: sampleRuns, years: cfg.years, start: cfg.pacwStart + cfg.cgtStart + cfg.csh2Start, glide: glide, protArr: protArr, pctData: pctData };
+  window.mcData = { runs: sampleRuns, years: cfg.years, start: cfg.equityStart + cfg.bondStart + cfg.cashStart, glide: glide, protArr: protArr, pctData: pctData };
   
   drawCone(pctData, glide, cfg.years);
-  drawTraj(sampleRuns, cfg.years, cfg.pacwStart + cfg.cgtStart + cfg.csh2Start, glide);
+  drawTraj(sampleRuns, cfg.years, cfg.equityStart + cfg.bondStart + cfg.cashStart, glide);
   drawProt(protArr);
 }
 
@@ -1874,7 +1874,7 @@ function drawProt(arr, canvasId) {
 var histResultsData = null;
 
 function runHistorical() {
-  var cfg = { pacwStart: +document.getElementById('histPACW').value, cgtStart: +document.getElementById('histCGT').value, csh2Start: +document.getElementById('histCSH2').value, years: +document.getElementById('histYears').value };
+  var cfg = { equityStart: +document.getElementById('histEquity').value, bondStart: +document.getElementById('histBond').value, cashStart: +document.getElementById('histCash').value, years: +document.getElementById('histYears').value };
   var yrs = Object.keys(EQUITY_RETURNS).map(Number).sort(function(a,b){return a-b;});
   var maxY = Math.max.apply(null, yrs);
   var results = [];
@@ -1921,7 +1921,7 @@ function runHistorical() {
   var glide = [];
   for (var y = 0; y <= cfg.years; y++) {
     var cumInf = Math.pow(1.025, y);
-    glide.push({ year: y, min: calcGlidepath(s.pacwMin, y, s.duration, cumInf, true) + calcGlidepath(s.cgtMin, y, s.duration, cumInf, true) });
+    glide.push({ year: y, min: calcGlidepath(s.equityMin, y, s.duration, cumInf, true) + calcGlidepath(s.bondMin, y, s.duration, cumInf, true) });
   }
 
   // Protection array
@@ -1933,8 +1933,8 @@ function runHistorical() {
   var savedByHodl = results.filter(function(r) { return r.res.hodlUsed > 0 && !r.res.failed; }).length;
 
   // Calculate buffers
-  var totalStart = cfg.pacwStart + cfg.cgtStart + cfg.csh2Start;
-  var totalMin = s.pacwMin + s.cgtMin + s.csh2Target;
+  var totalStart = cfg.equityStart + cfg.bondStart + cfg.cashStart;
+  var totalMin = s.equityMin + s.bondMin + s.cashTarget;
   var buffer = totalStart - totalMin;
   var bufferPct = totalMin > 0 ? Math.round((buffer / totalMin) * 100) : 0;
 
@@ -1948,8 +1948,8 @@ function runHistorical() {
     h += '<div class="' + bufferClass + '" style="margin-bottom:20px;">';
     h += '<strong>' + bufferIcon + ' Starting Values vs Settings:</strong><br>';
     h += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:10px 0;">';
-    h += '<div><strong>Starting:</strong> £' + totalStart.toLocaleString() + '<br><span style="font-size:11px;color:var(--text-muted);">Equity: £' + cfg.pacwStart.toLocaleString() + ' | Bond: £' + cfg.cgtStart.toLocaleString() + ' | Cash: £' + cfg.csh2Start.toLocaleString() + '</span></div>';
-    h += '<div><strong>Minimums (Settings):</strong> £' + totalMin.toLocaleString() + '<br><span style="font-size:11px;color:var(--text-muted);">Equity: £' + s.pacwMin.toLocaleString() + ' | Bond: £' + s.cgtMin.toLocaleString() + ' | Cash: £' + s.csh2Target.toLocaleString() + '</span></div>';
+    h += '<div><strong>Starting:</strong> £' + totalStart.toLocaleString() + '<br><span style="font-size:11px;color:var(--text-muted);">Equity: £' + cfg.equityStart.toLocaleString() + ' | Bond: £' + cfg.bondStart.toLocaleString() + ' | Cash: £' + cfg.cashStart.toLocaleString() + '</span></div>';
+    h += '<div><strong>Minimums (Settings):</strong> £' + totalMin.toLocaleString() + '<br><span style="font-size:11px;color:var(--text-muted);">Equity: £' + s.equityMin.toLocaleString() + ' | Bond: £' + s.bondMin.toLocaleString() + ' | Cash: £' + s.cashTarget.toLocaleString() + '</span></div>';
     h += '<div><strong>Buffer:</strong> ' + (buffer >= 0 ? '+' : '') + '£' + buffer.toLocaleString() + ' (' + (buffer >= 0 ? '+' : '') + bufferPct + '%)<br><span style="font-size:11px;color:var(--text-muted);">Cushion above glidepath floor</span></div>';
     h += '</div>';
     if (buffer > totalMin * 0.5) {
@@ -1999,7 +1999,7 @@ function runHistorical() {
 
   // Draw charts
   drawCone(pctData, glide, cfg.years, 'histConeChart');
-  drawHistTraj(results, cfg.years, cfg.pacwStart + cfg.cgtStart + cfg.csh2Start, glide);
+  drawHistTraj(results, cfg.years, cfg.equityStart + cfg.bondStart + cfg.cashStart, glide);
   drawProt(protArr, 'histProtChart');
 }
 
@@ -2236,7 +2236,7 @@ function drawHistTraj(results, years, start, glide) {
 }
 
 function runScenarios() {
-  var cfg = { pacwStart: +document.getElementById('scenPACW').value, cgtStart: +document.getElementById('scenCGT').value, csh2Start: +document.getElementById('scenCSH2').value, years: 35 };
+  var cfg = { equityStart: +document.getElementById('scenEquity').value, bondStart: +document.getElementById('scenBond').value, cashStart: +document.getElementById('scenCash').value, years: 35 };
   var scen = [
     { name: 'Great Depression', eq: [-0.17,-0.34,-0.53,-0.23,0.67,0.04,0.39,0.25,-0.38,0.28], inf: [0,-0.06,-0.09,-0.10,0.01,0.02,0.03,0.01,0.03,-0.02], color: '#e74c3c' },
     { name: 'Stagflation 70s', eq: [-0.17,-0.28,0.38,0.18,-0.13,-0.03,0.04,0.15,-0.09,0.20], inf: [0.09,0.12,0.07,0.05,0.07,0.09,0.13,0.13,0.09,0.04], color: '#e67e22' },
@@ -2258,7 +2258,7 @@ function runScenarios() {
   var glide = [];
   for (var y = 0; y <= cfg.years; y++) {
     var cumInf = Math.pow(1.025, y);
-    glide.push({ year: y, min: calcGlidepath(s.pacwMin, y, s.duration, cumInf, true) + calcGlidepath(s.cgtMin, y, s.duration, cumInf, true) });
+    glide.push({ year: y, min: calcGlidepath(s.equityMin, y, s.duration, cumInf, true) + calcGlidepath(s.bondMin, y, s.duration, cumInf, true) });
   }
 
   // Build HTML with chart
@@ -2280,7 +2280,7 @@ function runScenarios() {
   document.getElementById('scenResults').innerHTML = h;
 
   // Draw scenario trajectory chart
-  drawScenTraj(results, cfg.years, cfg.pacwStart + cfg.cgtStart + cfg.csh2Start, glide);
+  drawScenTraj(results, cfg.years, cfg.equityStart + cfg.bondStart + cfg.cashStart, glide);
 }
 
 function drawScenTraj(results, years, start, glide) {
@@ -2526,26 +2526,26 @@ function showGlidepath() {
   var inf = +document.getElementById('gpInflation').value / 100;
   var dur = +document.getElementById('gpDuration').value;
   
-  var h = '<table><thead><tr><th>Yr</th><th>PACW Min</th><th>CGT Min</th><th>Cash Target</th><th>Total Min</th></tr></thead><tbody>';
+  var h = '<table><thead><tr><th>Yr</th><th>Equity Min</th><th>Bond Min</th><th>Cash Target</th><th>Total Min</th></tr></thead><tbody>';
   for (var y = 0; y <= dur; y++) {
     var cumInf = Math.pow(1 + inf, y);
-    var pacw = calcGlidepath(s.pacwMin, y, dur, cumInf, true);
-    var cgt = calcGlidepath(s.cgtMin, y, dur, cumInf, true);
-    var csh2 = calcGlidepath(s.csh2Target, y, dur, cumInf, false);
+    var equity = calcGlidepath(s.equityMin, y, dur, cumInf, true);
+    var bond = calcGlidepath(s.bondMin, y, dur, cumInf, true);
+    var cash = calcGlidepath(s.cashTarget, y, dur, cumInf, false);
     if (y % 5 === 0 || y === dur) {
-      h += '<tr><td>' + y + '</td><td>£' + Math.round(pacw).toLocaleString() + '</td><td>£' + Math.round(cgt).toLocaleString() + '</td><td>£' + Math.round(csh2).toLocaleString() + '</td><td>£' + Math.round(pacw + cgt + csh2).toLocaleString() + '</td></tr>';
+      h += '<tr><td>' + y + '</td><td>£' + Math.round(equity).toLocaleString() + '</td><td>£' + Math.round(bond).toLocaleString() + '</td><td>£' + Math.round(cash).toLocaleString() + '</td><td>£' + Math.round(equity + bond + cash).toLocaleString() + '</td></tr>';
     }
   }
   h += '</tbody></table>';
-  h += '<div class="info-box" style="margin-top:20px;"><strong>Goal:</strong> At year ' + dur + ', growth funds = £0, only CSH2 remains (£' + s.csh2Target.toLocaleString() + ' in real terms)</div>';
+  h += '<div class="info-box" style="margin-top:20px;"><strong>Goal:</strong> At year ' + dur + ', growth funds = £0, only Cash remains (£' + s.cashTarget.toLocaleString() + ' in real terms)</div>';
   document.getElementById('glidepathResults').innerHTML = h;
 }
 
 function loadStressSettings() {
   var s = getStressDB().settings;
-  document.getElementById('ssPACWMin').value = s.pacwMin;
-  document.getElementById('ssCGTMin').value = s.cgtMin;
-  document.getElementById('ssCSH2Target').value = s.csh2Target;
+  document.getElementById('ssEquityMin').value = s.equityMin;
+  document.getElementById('ssBondMin').value = s.bondMin;
+  document.getElementById('ssCashTarget').value = s.cashTarget;
   document.getElementById('ssDuration').value = s.duration;
   document.getElementById('ssPA').value = s.pa;
   document.getElementById('ssBRL').value = s.brl;
@@ -2563,9 +2563,9 @@ function loadStressSettings() {
 
 function saveStressSettings() {
   var db = getStressDB();
-  db.settings.pacwMin = +document.getElementById('ssPACWMin').value;
-  db.settings.cgtMin = +document.getElementById('ssCGTMin').value;
-  db.settings.csh2Target = +document.getElementById('ssCSH2Target').value;
+  db.settings.equityMin = +document.getElementById('ssEquityMin').value;
+  db.settings.bondMin = +document.getElementById('ssBondMin').value;
+  db.settings.cashTarget = +document.getElementById('ssCashTarget').value;
   db.settings.duration = +document.getElementById('ssDuration').value;
   db.settings.pa = +document.getElementById('ssPA').value;
   db.settings.brl = +document.getElementById('ssBRL').value;
@@ -2588,7 +2588,7 @@ function exportHistoryCSV() {
   if (!db.history.length) { alert('No history to export'); return; }
   
   // CSV header
-  var csv = 'Date,Tax Year,Year Num,PACW,CGT,CSH2,Total,Source,SIPP Draw,ISA Draw,Other,State Pension,In Protection,Reason,Rebalance,Adj PACW Min,Adj CGT Min,Adj CSH2 Target\n';
+  var csv = 'Date,Tax Year,Year Num,Equity,Bond,Cash,Total,Source,SIPP Draw,ISA Draw,Other,State Pension,In Protection,Reason,Rebalance,Adj Equity Min,Adj Bond Min,Adj Cash Target\n';
   
   // CSV rows
   db.history.forEach(function(h) {
@@ -2596,9 +2596,9 @@ function exportHistoryCSV() {
       h.date,
       h.taxYear,
       h.yearNum,
-      h.pacw,
-      h.cgt,
-      h.csh2,
+      h.equity,
+      h.bond,
+      h.cash,
       h.total,
       h.source,
       h.sipp ? h.sipp.toFixed(2) : '',
@@ -2608,9 +2608,9 @@ function exportHistoryCSV() {
       h.inProtection ? 'Yes' : 'No',
       '"' + (h.reason || '').replace(/"/g, '""') + '"',
       '"' + (h.rebal || '').replace(/"/g, '""') + '"',
-      h.adjPACW,
-      h.adjCGT,
-      h.adjCSH2
+      h.adjEquity,
+      h.adjBond,
+      h.adjCash
     ].join(',') + '\n';
   });
   
@@ -2649,9 +2649,9 @@ function importHistoryCSV(input) {
         if (hdr === 'date') h.date = v;
         else if (hdr === 'taxyear') h.taxYear = v;
         else if (hdr === 'yearnum') h.yearNum = parseInt(v) || 0;
-        else if (hdr === 'pacw') h.pacw = parseFloat(v) || 0;
-        else if (hdr === 'cgt') h.cgt = parseFloat(v) || 0;
-        else if (hdr === 'csh2') h.csh2 = parseFloat(v) || 0;
+        else if (hdr === 'pacw' || hdr === 'equity') h.equity = parseFloat(v) || 0;
+        else if (hdr === 'cgt' || hdr === 'bond') h.bond = parseFloat(v) || 0;
+        else if (hdr === 'csh2' || hdr === 'cash') h.cash = parseFloat(v) || 0;
         else if (hdr === 'total') h.total = parseFloat(v) || 0;
         else if (hdr === 'source') h.source = v;
         else if (hdr === 'sippdraw') h.sipp = parseFloat(v) || 0;
@@ -2661,9 +2661,9 @@ function importHistoryCSV(input) {
         else if (hdr === 'inprotection') h.inProtection = v.toLowerCase() === 'yes';
         else if (hdr === 'reason') h.reason = v;
         else if (hdr === 'rebalance') h.rebal = v;
-        else if (hdr === 'adjpacwmin') h.adjPACW = parseFloat(v) || 0;
-        else if (hdr === 'adjcgtmin') h.adjCGT = parseFloat(v) || 0;
-        else if (hdr === 'adjcsh2target') h.adjCSH2 = parseFloat(v) || 0;
+        else if (hdr === 'adjpacwmin' || hdr === 'adjequitymin') h.adjEquity = parseFloat(v) || 0;
+        else if (hdr === 'adjcgtmin' || hdr === 'adjbondmin') h.adjBond = parseFloat(v) || 0;
+        else if (hdr === 'adjcsh2target' || hdr === 'adjcashtarget') h.adjCash = parseFloat(v) || 0;
       });
 
       if (!h.date) continue;
@@ -3209,13 +3209,13 @@ async function exportToBackupDir() {
     };
 
     // Build history CSV
-    var csv = 'Date,Tax Year,Year Num,PACW,CGT,CSH2,Total,Source,SIPP Draw,ISA Draw,Other,State Pension,In Protection,Reason,Rebalance,Adj PACW Min,Adj CGT Min,Adj CSH2 Target\n';
+    var csv = 'Date,Tax Year,Year Num,Equity,Bond,Cash,Total,Source,SIPP Draw,ISA Draw,Other,State Pension,In Protection,Reason,Rebalance,Adj Equity Min,Adj Bond Min,Adj Cash Target\n';
     decisionDB.history.forEach(function(h) {
-      csv += [h.date, h.taxYear, h.yearNum, h.pacw, h.cgt, h.csh2, h.total, h.source,
+      csv += [h.date, h.taxYear, h.yearNum, h.equity, h.bond, h.cash, h.total, h.source,
         h.sipp ? h.sipp.toFixed(2) : '', h.isa ? h.isa.toFixed(2) : '',
         h.other ? h.other.toFixed(2) : '', h.state ? h.state.toFixed(2) : '',
         h.inProtection ? 'Yes' : 'No', '"' + (h.reason || '').replace(/"/g, '""') + '"',
-        '"' + (h.rebal || '').replace(/"/g, '""') + '"', h.adjPACW, h.adjCGT, h.adjCSH2
+        '"' + (h.rebal || '').replace(/"/g, '""') + '"', h.adjEquity, h.adjBond, h.adjCash
       ].join(',') + '\n';
     });
 
