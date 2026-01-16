@@ -1,0 +1,3393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Pension Planner">
+  <meta name="theme-color" content="#0f0f1a">
+  <meta name="description" content="Pension drawdown decision tool with Monte Carlo stress testing">
+  <link rel="manifest" href="data:application/json,{&quot;name&quot;:&quot;Pension Planner&quot;,&quot;short_name&quot;:&quot;Pension&quot;,&quot;start_url&quot;:&quot;.&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;%230f0f1a&quot;,&quot;theme_color&quot;:&quot;%230f0f1a&quot;,&quot;icons&quot;:[{&quot;src&quot;:&quot;data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%230f0f1a' width='100' height='100' rx='20'/><text x='50' y='65' text-anchor='middle' font-size='50'>💰</text></svg>&quot;,&quot;sizes&quot;:&quot;any&quot;,&quot;type&quot;:&quot;image/svg+xml&quot;}]}">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%230f0f1a' width='100' height='100' rx='20'/><text x='50' y='65' text-anchor='middle' font-size='50'>💰</text></svg>">
+  <title>Pension Planner v1.0</title>
+  <style>
+    :root { --bg: #0f0f1a; --card: #1a1a2e; --card-alt: #16213e; --text: #e8e4dc; --text-muted: #8b8b9b; --primary: #f0c674; --success: #2ea043; --warning: #e1b12c; --danger: #f85149; --info: #7eb8da; --accent: #c77dff; --border: rgba(255,255,255,0.1); }
+    * { box-sizing: border-box; }
+    body { font-family: 'IBM Plex Sans', -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; min-height: 100vh; }
+    .container { max-width: 1400px; margin: 0 auto; }
+    .main-tabs { display: flex; gap: 0; margin-bottom: 24px; }
+    .main-tab { flex: 1; padding: 20px; background: var(--card); border: none; color: var(--text-muted); font-size: 16px; font-weight: 500; cursor: pointer; border-bottom: 3px solid transparent; }
+    .main-tab:first-child { border-radius: 12px 0 0 12px; }
+    .main-tab:last-child { border-radius: 0 12px 12px 0; }
+    .main-tab.active { background: var(--card-alt); color: var(--primary); border-bottom-color: var(--primary); }
+    .card { background: var(--card); border-radius: 12px; padding: 24px; margin-bottom: 20px; border: 1px solid var(--border); }
+    .card h2 { margin: 0 0 20px; font-size: 16px; font-weight: 500; color: var(--primary); }
+    .card h3 { margin: 20px 0 16px; font-size: 14px; font-weight: 500; color: var(--text); }
+    .grid { display: grid; gap: 16px; }
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+    .grid-4 { grid-template-columns: repeat(4, 1fr); }
+    .grid-5 { grid-template-columns: repeat(5, 1fr); }
+    .grid-6 { grid-template-columns: repeat(6, 1fr); }
+    .grid-7 { grid-template-columns: repeat(7, 1fr); }
+    @media (max-width: 1100px) { .grid-6, .grid-7 { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 768px) { .grid-4, .grid-5, .grid-6, .grid-7 { grid-template-columns: repeat(2, 1fr); } }
+    label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 6px; }
+    input, select { width: 100%; padding: 12px 14px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 14px; }
+    input:focus, select:focus { outline: none; border-color: var(--primary); }
+    button { padding: 14px 28px; background: linear-gradient(135deg, var(--primary) 0%, #e8927c 100%); border: none; border-radius: 10px; color: #1a1a2e; font-size: 14px; font-weight: 600; cursor: pointer; }
+    button.secondary { background: var(--card-alt); color: var(--text); border: 1px solid var(--border); }
+    button.small { padding: 8px 16px; font-size: 12px; }
+    button.danger { background: var(--danger); color: white; }
+    .sub-tabs { display: flex; gap: 4px; margin-bottom: 20px; flex-wrap: wrap; }
+    .sub-tab { padding: 10px 20px; background: rgba(0,0,0,0.2); border: none; border-radius: 8px; color: var(--text-muted); font-size: 13px; cursor: pointer; }
+    .sub-tab.active { background: rgba(240,198,116,0.15); color: var(--primary); font-weight: 500; }
+    .hidden { display: none; }
+    .decision-box { background: linear-gradient(135deg, rgba(46,160,67,0.1) 0%, rgba(46,160,67,0.05) 100%); border: 1px solid rgba(46,160,67,0.3); border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+    .decision-box.protection { background: linear-gradient(135deg, rgba(248,81,73,0.1) 0%, rgba(248,81,73,0.05) 100%); border-color: rgba(248,81,73,0.3); }
+    .decision-box.csh2-draw { background: linear-gradient(135deg, rgba(126,184,218,0.1) 0%, rgba(126,184,218,0.05) 100%); border-color: rgba(126,184,218,0.3); }
+    .badge { display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+    .badge-standard { background: var(--success); color: white; }
+    .badge-protection { background: var(--danger); color: white; }
+    .badge-fixed { background: var(--info); color: #1a1a2e; }
+    .amount { font-size: 28px; font-weight: 300; color: var(--primary); margin: 12px 0; }
+    .tax-breakdown { background: rgba(0,0,0,0.2); border-radius: 8px; padding: 16px; }
+    .tax-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; }
+    .tax-row.total { border-top: 1px solid var(--border); margin-top: 8px; padding-top: 12px; font-weight: 600; }
+    .alert { padding: 14px 18px; border-radius: 8px; margin-bottom: 16px; font-size: 13px; }
+    .alert-warning { background: rgba(225,177,44,0.1); border-left: 3px solid var(--warning); }
+    .alert-danger { background: rgba(248,81,73,0.1); border-left: 3px solid var(--danger); }
+    .alert-success { background: rgba(46,160,67,0.1); border-left: 3px solid var(--success); }
+    .alert-info { background: rgba(126,184,218,0.1); border-left: 3px solid var(--info); }
+    .stat-box { background: rgba(0,0,0,0.2); border-radius: 10px; padding: 20px; text-align: center; }
+    .stat-value { font-size: 32px; font-weight: 300; }
+    .stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-top: 4px; }
+    .stat-box.success .stat-value { color: var(--success); }
+    .stat-box.warning .stat-value { color: var(--warning); }
+    .stat-box.danger .stat-value { color: var(--danger); }
+    .stat-box.info .stat-value { color: var(--info); }
+    .chart-container { background: rgba(0,0,0,0.2); border-radius: 12px; padding: 20px; margin: 20px 0; }
+    .chart-title { font-size: 13px; color: var(--text-muted); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+    canvas { width: 100% !important; }
+    .legend { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 12px; font-size: 12px; }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-dot { width: 12px; height: 12px; border-radius: 2px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); }
+    th { background: var(--card-alt); color: var(--text-muted); font-size: 11px; text-transform: uppercase; }
+    .scenario-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 12px; padding: 12px; border-bottom: 1px solid var(--border); align-items: center; }
+    .scenario-row.header { font-weight: 600; color: var(--text-muted); font-size: 11px; text-transform: uppercase; }
+    .scenario-row.failed { background: rgba(248,81,73,0.1); }
+    .info-box { background: rgba(126,184,218,0.1); border: 1px solid rgba(126,184,218,0.3); border-radius: 8px; padding: 16px; margin: 16px 0; font-size: 13px; }
+    .warning-box { background: rgba(240,198,116,0.1); border: 1px solid rgba(240,198,116,0.3); border-radius: 8px; padding: 16px; margin: 16px 0; font-size: 13px; }
+    .input-warning { background: rgba(240,198,116,0.1); border: 1px solid rgba(240,198,116,0.3); border-radius: 6px; padding: 10px 14px; margin: -10px 0 20px 0; font-size: 12px; color: var(--warning); }
+    .input-warning.hidden { display: none; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="main-tabs">
+    <button class="main-tab active" onclick="showMainTab('decision')">📋 Decision Tool</button>
+    <button class="main-tab" onclick="showMainTab('stress')">📊 Stress Tester</button>
+  </div>
+
+  <div id="main-decision">
+    <div class="sub-tabs">
+      <button class="sub-tab active" onclick="showDecisionTab('entry')">Monthly Entry</button>
+      <button class="sub-tab" onclick="showDecisionTab('taxyears')">Tax Years</button>
+      <button class="sub-tab" onclick="showDecisionTab('history')">History</button>
+      <button class="sub-tab" onclick="showDecisionTab('settings')">Settings</button>
+    </div>
+    <div id="decision-entry">
+      <div class="card">
+        <h2>📅 Enter Monthly Values</h2>
+        <div class="grid grid-4">
+          <div><label>Month</label><input type="month" id="entryMonth"></div>
+          <div><label>PACW Balance (£)</label><input type="number" id="entryPACW" placeholder="250000"></div>
+          <div><label>CGT Balance (£)</label><input type="number" id="entryCGT" placeholder="200000"></div>
+          <div><label>CSH2 Balance (£)</label><input type="number" id="entryCSH2" placeholder="50000"></div>
+        </div>
+        <div style="margin-top: 20px; text-align: center;"><button onclick="generateDecision()">Generate Decision</button></div>
+      </div>
+      <div id="decisionOutput"></div>
+    </div>
+    <div id="decision-taxyears" class="hidden">
+      <div class="card">
+        <h2>📊 Tax Year Configuration</h2>
+        <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 20px;">Configure tax thresholds, pensions, and expected CPI for each tax year.</p>
+        <div id="taxYearsList"></div>
+        <div style="margin-top: 20px; display: flex; gap: 12px; flex-wrap: wrap;">
+          <button class="secondary" onclick="addTaxYear()">+ Add Tax Year</button>
+          <button class="small" onclick="exportTaxYears()">📥 Export Tax Years</button>
+          <button class="small secondary" onclick="document.getElementById('importTaxYearsFile').click()">📤 Import Tax Years</button>
+          <input type="file" id="importTaxYearsFile" accept=".json" style="display:none" onchange="importTaxYears(this)">
+        </div>
+      </div>
+    </div>
+    <div id="decision-history" class="hidden">
+      <div class="card"><h2>📜 Drawdown History</h2><div style="overflow-x: auto;"><table><thead><tr><th>Month</th><th>Mode</th><th>Total</th><th>SIPP</th><th>Source</th><th>Notes</th><th></th></tr></thead><tbody id="historyBody"></tbody></table></div><div style="margin-top: 16px; display: flex; gap: 12px; flex-wrap: wrap;"><button class="small" onclick="exportHistoryCSV()">📥 Export CSV</button><button class="small secondary" onclick="document.getElementById('importHistoryFile').click()">📤 Import CSV</button><input type="file" id="importHistoryFile" accept=".csv" style="display:none" onchange="importHistoryCSV(this)"><button class="danger small" onclick="clearHistory()">Clear History</button></div></div>
+    </div>
+    <div id="decision-settings" class="hidden">
+      <div class="card">
+        <h2>⚙️ Decision Tool Settings</h2>
+        <h3>Fund Minimums (Year 0 baseline)</h3>
+        <div class="grid grid-4">
+          <div><label>PACW Minimum (£)</label><input type="number" id="dsPACWMin" value="250000"></div>
+          <div><label>CGT Minimum (£)</label><input type="number" id="dsCGTMin" value="200000"></div>
+          <div><label>CSH2 Target (£)</label><input type="number" id="dsCSH2Target" value="50000"></div>
+          <div><label>Depletion Duration (years)</label><input type="number" id="dsDuration" value="35"></div>
+        </div>
+        <h3>Income Settings</h3>
+        <div class="grid grid-4">
+          <div><label>Target Gross Salary</label><input type="number" id="dsBaseSalary" value="30000"></div>
+          <div><label>Protection Reduction (%)</label><input type="number" id="dsProtectionFactor" value="20"></div>
+          <div><label>Recovery Buffer (£)</label><input type="number" id="dsRecoveryBuffer" value="15000"></div>
+          <div><label>CSH2 Before Protection</label><input type="number" id="dsConsecutiveLimit" value="3"></div>
+        </div>
+        <div style="margin-top: 24px; display: flex; gap: 12px; flex-wrap: wrap;">
+          <button onclick="saveDecisionSettings()">Save Settings</button>
+          <button class="secondary" onclick="exportDecisionSettings()">📥 Export All</button>
+          <button class="secondary" onclick="document.getElementById('importDecisionFile').click()">📤 Import All</button>
+          <input type="file" id="importDecisionFile" accept=".json" style="display:none" onchange="importDecisionSettings(this)">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="main-stress" class="hidden">
+    <div class="sub-tabs">
+      <button class="sub-tab active" onclick="showStressTab('montecarlo')">🎲 Monte Carlo</button>
+      <button class="sub-tab" onclick="showStressTab('historical')">📜 Historical</button>
+      <button class="sub-tab" onclick="showStressTab('scenarios')">⚡ Scenarios</button>
+      <button class="sub-tab" onclick="showStressTab('drawdown')">💷 Drawdown</button>
+      <button class="sub-tab" onclick="showStressTab('glidepath')">📉 Glidepath</button>
+      <button class="sub-tab" onclick="showStressTab('stresssettings')">⚙️ Settings</button>
+    </div>
+    <div id="stress-montecarlo">
+      <div class="card">
+        <h2>🎲 Monte Carlo Simulation</h2>
+        <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 20px;">1,000 scenarios. SIPP draw = BRL - Other - State Pension (stays below 40% tax).</p>
+        <div class="grid grid-6" style="margin-bottom: 20px;">
+          <div><label>PACW Start (£)</label><input type="number" id="mcPACW" value="250000" oninput="checkStressInputs('mc')"></div>
+          <div><label>CGT Start (£)</label><input type="number" id="mcCGT" value="200000" oninput="checkStressInputs('mc')"></div>
+          <div><label>CSH2 Start (£)</label><input type="number" id="mcCSH2" value="50000" oninput="checkStressInputs('mc')"></div>
+          <div><label>Years</label><input type="number" id="mcYears" value="35"></div>
+          <div><label>Sample Lines</label><input type="number" id="mcSampleLines" value="100"></div>
+          <div style="display: flex; align-items: flex-end;"><button onclick="runMonteCarlo()" style="width: 100%;">Run</button></div>
+        </div>
+        <div id="mcInputWarning" class="input-warning hidden"></div>
+        <div id="mcResults"></div>
+      </div>
+    </div>
+    <div id="stress-historical" class="hidden">
+      <div class="card">
+        <h2>📜 Historical Sequence Analysis</h2>
+        <div class="grid grid-5" style="margin-bottom: 20px;">
+          <div><label>PACW Start (£)</label><input type="number" id="histPACW" value="250000" oninput="checkStressInputs('hist')"></div>
+          <div><label>CGT Start (£)</label><input type="number" id="histCGT" value="200000" oninput="checkStressInputs('hist')"></div>
+          <div><label>CSH2 Start (£)</label><input type="number" id="histCSH2" value="50000" oninput="checkStressInputs('hist')"></div>
+          <div><label>Years</label><input type="number" id="histYears" value="35"></div>
+          <div style="display: flex; align-items: flex-end;"><button onclick="runHistorical()" style="width: 100%;">Run</button></div>
+        </div>
+        <div id="histInputWarning" class="input-warning hidden"></div>
+        <div id="histResults"></div>
+      </div>
+    </div>
+    <div id="stress-scenarios" class="hidden">
+      <div class="card">
+        <h2>⚡ Stress Scenarios</h2>
+        <div class="grid grid-4" style="margin-bottom: 20px;">
+          <div><label>PACW Start (£)</label><input type="number" id="scenPACW" value="250000" oninput="checkStressInputs('scen')"></div>
+          <div><label>CGT Start (£)</label><input type="number" id="scenCGT" value="200000" oninput="checkStressInputs('scen')"></div>
+          <div><label>CSH2 Start (£)</label><input type="number" id="scenCSH2" value="50000" oninput="checkStressInputs('scen')"></div>
+          <div style="display: flex; align-items: flex-end;"><button onclick="runScenarios()" style="width: 100%;">Run</button></div>
+        </div>
+        <div id="scenInputWarning" class="input-warning hidden"></div>
+        <div id="scenResults"></div>
+      </div>
+    </div>
+    <div id="stress-drawdown" class="hidden">
+      <div class="card">
+        <h2>💷 SIPP Drawdown Schedule</h2>
+        <div class="grid grid-3" style="margin-bottom: 20px;">
+          <div><label>Assumed Inflation (%)</label><input type="number" id="ddInflation" value="2.5" step="0.1"></div>
+          <div><label>Duration (years)</label><input type="number" id="ddDuration" value="35"></div>
+          <div style="display: flex; align-items: flex-end;"><button onclick="showDrawdownSchedule()" style="width: 100%;">Show</button></div>
+        </div>
+        <div id="drawdownResults"></div>
+      </div>
+    </div>
+    <div id="stress-glidepath" class="hidden">
+      <div class="card">
+        <h2>📉 Glidepath Visualization</h2>
+        <div class="grid grid-3" style="margin-bottom: 20px;">
+          <div><label>Assumed Inflation (%)</label><input type="number" id="gpInflation" value="2.5" step="0.1"></div>
+          <div><label>Duration (years)</label><input type="number" id="gpDuration" value="35"></div>
+          <div style="display: flex; align-items: flex-end;"><button onclick="showGlidepath()" style="width: 100%;">Show</button></div>
+        </div>
+        <div id="glidepathResults"></div>
+      </div>
+    </div>
+    <div id="stress-stresssettings" class="hidden">
+      <div class="card">
+        <h2>⚙️ Stress Tester Settings</h2>
+        
+        <h3>Fund Minimums (Year 0, real terms)</h3>
+        <div class="grid grid-4">
+          <div><label>PACW Minimum (£)</label><input type="number" id="ssPACWMin" value="250000"></div>
+          <div><label>CGT Minimum (£)</label><input type="number" id="ssCGTMin" value="200000"></div>
+          <div><label>CSH2 Target (£)</label><input type="number" id="ssCSH2Target" value="50000"></div>
+          <div><label>Duration (years)</label><input type="number" id="ssDuration" value="35"></div>
+        </div>
+        <div class="info-box">
+          <strong>📉 Glidepath:</strong> PACW & CGT minimums inflate with simulated CPI but deplete linearly to £0. CSH2 inflates only (maintains real value).
+        </div>
+        
+        <h3>Tax Thresholds (Year 0)</h3>
+        <div class="grid grid-4">
+          <div><label>Personal Allowance (£)</label><input type="number" id="ssPA" value="12570"></div>
+          <div><label>Basic Rate Limit (£)</label><input type="number" id="ssBRL" value="50270"></div>
+          <div><label>Higher Rate Limit (£)</label><input type="number" id="ssHRL" value="125140"></div>
+          <div>
+            <label>Tax Threshold Mode</label>
+            <select id="ssTaxMode">
+              <option value="frozen">Frozen (Pessimistic)</option>
+              <option value="inflates">Inflates with CPI</option>
+            </select>
+          </div>
+        </div>
+        <div class="warning-box">
+          <strong>💷 SIPP Draw = BRL - Other - State Pension</strong><br>
+          Fills basic rate band exactly (stays below 40% tax).<br>
+          <strong>Frozen:</strong> Fiscal drag squeezes SIPP allowance over time.<br>
+          <strong>Inflates:</strong> SIPP draw maintains purchasing power.
+        </div>
+        
+        <h3>Other Pensions (Year 0)</h3>
+        <div class="grid grid-4">
+          <div><label>Other Income/Pension (£/yr)</label><input type="number" id="ssOther" value="0"></div>
+          <div><label>State Pension (£/yr)</label><input type="number" id="ssStatePension" value="12000"></div>
+          <div><label>State Pension Start Year</label><input type="number" id="ssStatePensionYear" value="12"></div>
+          <div></div>
+        </div>
+        <div class="info-box">
+          <strong>Pension Inflation:</strong><br>
+          • Other Income/Pension: Follows simulated CPI, capped at 4% per year<br>
+          • State Pension: Follows simulated CPI (triple-lock proxy)
+        </div>
+        
+        <h3>Protection Rules</h3>
+        <div class="grid grid-3">
+          <div><label>Consecutive CSH2 Before Protection</label><input type="number" id="ssConsecutiveLimit" value="3"></div>
+          <div><label>Protection Multiplier</label><input type="number" id="ssProtectionMult" value="0.8" step="0.05"></div>
+          <div style="display:flex;align-items:center;padding-top:20px;">
+            <label style="display:flex;align-items:center;cursor:pointer;margin:0;">
+              <input type="checkbox" id="ssDisableProtection" style="width:auto;margin-right:8px;">
+              <span style="text-transform:none;font-size:13px;">Disable Protection Mode</span>
+            </label>
+          </div>
+        </div>
+        <div class="info-box" style="margin-top:12px;">
+          <strong>Disable Protection:</strong> Use this when testing all-CSH2 or conservative strategies where protection mode doesn't apply.
+        </div>
+
+        <h3>Break Glass HODL (RICA - Ruffer Investment Company)</h3>
+        <div class="grid grid-3">
+          <div style="display:flex;align-items:center;padding-top:20px;">
+            <label style="display:flex;align-items:center;cursor:pointer;margin:0;">
+              <input type="checkbox" id="ssHodlEnabled" style="width:auto;margin-right:8px;">
+              <span style="text-transform:none;font-size:13px;">Enable HODL Reserve</span>
+            </label>
+          </div>
+          <div><label>HODL Value (£)</label><input type="number" id="ssHodlValue" value="25000"></div>
+          <div></div>
+        </div>
+        <div class="info-box" style="margin-top:12px;">
+          <strong>🔒 Break Glass Reserve:</strong> Emergency fund held in RICA (Ruffer Investment Company).<br>
+          • Multi-asset absolute return fund targeting positive returns in all conditions<br>
+          • Low correlation to equities - historically performs well during market crashes<br>
+          • ~6.9% annualised return since 2004, ~6% volatility, max drawdown ~10%<br>
+          • Only accessed when main strategy would otherwise fail
+        </div>
+
+        <div style="margin-top: 24px; display: flex; gap: 12px; flex-wrap: wrap;">
+          <button onclick="saveStressSettings()">Save Settings</button>
+          <button class="secondary" onclick="exportStressSettings()">📥 Export Settings</button>
+          <button class="secondary" onclick="document.getElementById('importStressFile').click()">📤 Import Settings</button>
+          <input type="file" id="importStressFile" accept=".json" style="display:none" onchange="importStressSettings(this)">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var EQUITY_RETURNS = {1928:0.4781,1929:-0.172,1930:-0.338,1931:-0.527,1932:-0.231,1933:0.669,1934:0.041,1935:0.3879,1936:0.2492,1937:-0.3839,1938:0.2846,1939:-0.0278,1940:-0.1278,1941:-0.1552,1942:0.0782,1943:0.1382,1944:0.1226,1945:0.2665,1946:-0.0818,1947:0.0225,1948:-0.0246,1949:0.1279,1950:0.1787,1951:0.1463,1952:0.0837,1953:-0.0377,1954:0.4399,1955:0.2084,1956:0.0262,1957:-0.1278,1958:0.3396,1959:0.1612,1960:-0.0912,1961:0.1889,1962:-0.1081,1963:0.1715,1964:0.1478,1965:0.1058,1966:-0.1858,1967:0.1506,1968:0.0457,1969:-0.1524,1970:0.0482,1971:0.0627,1972:0.1476,1973:-0.1652,1974:-0.2777,1975:0.3815,1976:0.1774,1977:-0.1271,1978:-0.0303,1979:0.0414,1980:0.1493,1981:-0.0909,1982:0.1976,1983:0.2027,1984:-0.0365,1985:0.2778,1986:0.2278,1987:0.0227,1988:0.1185,1989:0.2697,1990:-0.0456,1991:0.2013,1992:0.0440,1993:0.1372,1994:0.0218,1995:0.3345,1996:0.2601,1997:0.2264,1998:0.1627,1999:0.2516,2000:-0.0617,2001:-0.0727,2002:-0.1679,2003:0.2525,2004:0.0333,2005:-0.0061,2006:0.1618,2007:0.0648,2008:-0.3355,2009:0.1882,2010:0.1102,2011:0.0556,2012:0.0728,2013:0.2665,2014:0.0775,2015:-0.0230,2016:0.1342,2017:0.2511,2018:-0.0583,2019:0.2234,2020:0.0726,2021:0.1873,2022:-0.0878,2023:0.1399,2024:0.1299};
+var INFLATION = {1928:-0.012,1929:0.002,1930:-0.060,1931:-0.094,1932:-0.103,1933:0.005,1934:0.021,1935:0.030,1936:0.014,1937:0.028,1938:-0.020,1939:-0.014,1940:0.010,1941:0.099,1942:0.090,1943:0.030,1944:0.023,1945:0.023,1946:0.186,1947:0.087,1948:0.030,1949:-0.020,1950:0.059,1951:0.060,1952:0.009,1953:0.006,1954:-0.007,1955:0.004,1956:0.030,1957:0.028,1958:0.017,1959:0.015,1960:0.014,1961:0.007,1962:0.013,1963:0.017,1964:0.010,1965:0.019,1966:0.034,1967:0.028,1968:0.046,1969:0.062,1970:0.055,1971:0.033,1972:0.034,1973:0.087,1974:0.124,1975:0.069,1976:0.048,1977:0.067,1978:0.090,1979:0.133,1980:0.125,1981:0.089,1982:0.038,1983:0.038,1984:0.040,1985:0.038,1986:0.011,1987:0.044,1988:0.044,1989:0.046,1990:0.061,1991:0.030,1992:0.029,1993:0.027,1994:0.026,1995:0.025,1996:0.034,1997:0.017,1998:0.016,1999:0.027,2000:0.034,2001:0.016,2002:0.024,2003:0.019,2004:0.033,2005:0.034,2006:0.025,2007:0.041,2008:0.001,2009:0.027,2010:0.015,2011:0.030,2012:0.017,2013:0.015,2014:0.008,2015:0.007,2016:0.021,2017:0.021,2018:0.019,2019:0.023,2020:0.012,2021:0.070,2022:0.065,2023:0.032,2024:0.029};
+
+// Historical events for context in failure analysis
+var HISTORICAL_EVENTS = {
+  1929: 'Wall Street Crash',
+  1930: 'Great Depression begins',
+  1931: 'Great Depression deepens',
+  1932: 'Great Depression trough',
+  1937: 'Recession of 1937-38',
+  1940: 'WWII market impact',
+  1973: 'Oil Crisis begins',
+  1974: 'Stagflation crisis',
+  1987: 'Black Monday crash',
+  2000: 'Dot-com bubble bursts',
+  2001: '9/11 & recession',
+  2002: 'Dot-com aftermath',
+  2008: 'Global Financial Crisis',
+  2020: 'COVID-19 pandemic',
+  2022: 'Inflation surge'
+};
+
+var DECISION_KEY = 'pension_decision_v53';
+var STRESS_KEY = 'pension_stress_v53';
+var BACKUP_DIR = 'pension-backups'; // Default backup directory name
+var EXTERNAL_CHECK_KEY = 'pension_external_check'; // Track when we last checked external files
+var hasUnsavedChanges = false; // Track if changes made since last external export
+
+// Simple hash function for checksum generation
+function simpleHash(str) {
+  var hash = 0;
+  for (var i = 0; i < str.length; i++) {
+    var char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash).toString(16);
+}
+
+// Generate checksum for decision data (excludes lastModified and checksum itself)
+function generateDecisionChecksum(db) {
+  var data = {
+    settings: db.settings,
+    taxYears: db.taxYears,
+    history: db.history
+  };
+  return simpleHash(JSON.stringify(data));
+}
+
+// Generate checksum for stress data
+function generateStressChecksum(db) {
+  var data = { settings: db.settings };
+  return simpleHash(JSON.stringify(data));
+}
+
+function getDecisionDB() {
+  var raw = localStorage.getItem(DECISION_KEY);
+  if (!raw) {
+    var db = { 
+      settings: { pacwMin: 250000, cgtMin: 200000, csh2Target: 50000, duration: 30, baseSalary: 30000, protectionFactor: 20, recoveryBuffer: 10000, consecutiveLimit: 3 },
+      taxYears: {
+        '25/26': { pa: 12570, brl: 50270, hrl: 125140, cpi: 0.025, other: 0, statePension: 0 }
+      },
+      history: [] 
+    };
+    localStorage.setItem(DECISION_KEY, JSON.stringify(db));
+    return db;
+  }
+  return JSON.parse(raw);
+}
+
+function saveDecisionDB(db, preserveTimestamp) {
+  if (!preserveTimestamp) {
+    db.lastModified = new Date().toISOString();
+  }
+  db.checksum = generateDecisionChecksum(db);
+  localStorage.setItem(DECISION_KEY, JSON.stringify(db));
+  hasUnsavedChanges = true; // Mark that we have changes to export
+}
+
+function getStressDB() {
+  var raw = localStorage.getItem(STRESS_KEY);
+  if (!raw) {
+    var db = {
+      settings: {
+        pacwMin: 250000, cgtMin: 200000, csh2Target: 50000, duration: 30,
+        pa: 12570, brl: 50270, hrl: 125140, taxMode: 'frozen',
+        other: 0, statePension: 12000, statePensionYear: 12,
+        protectionMult: 0.8, consecutiveLimit: 3, disableProtection: false,
+        hodlEnabled: false, hodlValue: 25000
+      }
+    };
+    localStorage.setItem(STRESS_KEY, JSON.stringify(db));
+    return db;
+  }
+  var db = JSON.parse(raw);
+  // Migrate old settings without HODL
+  if (db.settings.hodlEnabled === undefined) db.settings.hodlEnabled = false;
+  if (db.settings.hodlValue === undefined) db.settings.hodlValue = 25000;
+  return db;
+}
+
+function saveStressDB(db, preserveTimestamp) {
+  if (!preserveTimestamp) {
+    db.lastModified = new Date().toISOString();
+  }
+  db.checksum = generateStressChecksum(db);
+  localStorage.setItem(STRESS_KEY, JSON.stringify(db));
+  hasUnsavedChanges = true; // Mark that we have changes to export
+}
+
+// Glidepath: growth funds deplete, CSH2 just inflates
+function calcGlidepath(base, year, duration, cumInf, isGrowth) {
+  if (isGrowth) {
+    var depletion = Math.max(0, 1 - year / duration);
+    return base * cumInf * depletion;
+  }
+  return base * cumInf;
+}
+
+// Analyze why a simulation failed and provide recommendations
+function analyzeFailure(result, returns, config, startYear) {
+  var analysis = {
+    criticalPeriod: null,
+    events: [],
+    worstFund: null,
+    fundAnalysis: {},
+    recommendations: []
+  };
+
+  if (!result.hist || result.hist.length < 2) return analysis;
+
+  // Find worst drawdown period (consecutive negative equity years)
+  var worstStart = 0, worstEnd = 0, worstLoss = 0, cumLoss = 0, periodStart = 0;
+  for (var y = 0; y < config.years; y++) {
+    var eq = returns.equity[y] || 0;
+    if (eq < 0) {
+      if (cumLoss === 0) periodStart = y;
+      cumLoss += eq;
+      if (cumLoss < worstLoss) {
+        worstLoss = cumLoss;
+        worstStart = periodStart;
+        worstEnd = y;
+      }
+    } else {
+      cumLoss = 0;
+    }
+  }
+
+  if (worstLoss < -0.1) {
+    analysis.criticalPeriod = {
+      startYear: worstStart,
+      endYear: worstEnd,
+      actualStartYear: startYear ? startYear + worstStart : null,
+      actualEndYear: startYear ? startYear + worstEnd : null,
+      equityLoss: worstLoss
+    };
+
+    // Find historical events in this period
+    if (startYear) {
+      for (var yr = startYear + worstStart; yr <= startYear + worstEnd; yr++) {
+        if (HISTORICAL_EVENTS[yr]) {
+          analysis.events.push({ year: yr, event: HISTORICAL_EVENTS[yr] });
+        }
+      }
+    }
+  }
+
+  // Analyze fund performance
+  var initial = result.hist[0];
+  var pacwDrop = 0, cgtDrop = 0, csh2Drop = 0;
+  var pacwMin = initial.pacw, cgtMin = initial.cgt, csh2Min = initial.csh2;
+
+  result.hist.forEach(function(h) {
+    if (h.pacw < pacwMin) pacwMin = h.pacw;
+    if (h.cgt < cgtMin) cgtMin = h.cgt;
+    if (h.csh2 < csh2Min) csh2Min = h.csh2;
+  });
+
+  pacwDrop = initial.pacw > 0 ? (pacwMin - initial.pacw) / initial.pacw : 0;
+  cgtDrop = initial.cgt > 0 ? (cgtMin - initial.cgt) / initial.cgt : 0;
+  csh2Drop = initial.csh2 > 0 ? (csh2Min - initial.csh2) / initial.csh2 : 0;
+
+  analysis.fundAnalysis = {
+    pacwDrop: pacwDrop,
+    cgtDrop: cgtDrop,
+    csh2Depletion: csh2Drop,
+    pacwMin: pacwMin,
+    cgtMin: cgtMin,
+    csh2Min: csh2Min
+  };
+
+  // Determine worst affected fund
+  if (pacwDrop < cgtDrop && pacwDrop < csh2Drop) {
+    analysis.worstFund = 'PACW';
+  } else if (cgtDrop < csh2Drop) {
+    analysis.worstFund = 'CGT';
+  } else {
+    analysis.worstFund = 'CSH2';
+  }
+
+  // Calculate recommendations
+  if (result.failed) {
+    // Estimate extra CSH2 buffer needed
+    var monthlyDraw = initial.sippDraw ? initial.sippDraw / 12 : 3000;
+    var failYear = result.failMonth ? result.failMonth / 12 : result.years;
+    var monthsShort = (config.years - failYear) * 12;
+    var extraBuffer = Math.ceil(monthsShort * monthlyDraw / 5000) * 5000;
+
+    if (extraBuffer > 0) {
+      analysis.recommendations.push({
+        type: 'buffer',
+        text: 'Increase CSH2 buffer by £' + extraBuffer.toLocaleString(),
+        amount: extraBuffer
+      });
+    }
+
+    // Estimate withdrawal reduction needed
+    var survivalRatio = result.years / config.years;
+    if (survivalRatio < 1 && survivalRatio > 0.3) {
+      var reduction = Math.ceil((1 - survivalRatio) * 100 / 5) * 5;
+      reduction = Math.min(reduction, 30); // Cap at 30%
+      analysis.recommendations.push({
+        type: 'withdrawal',
+        text: 'Or reduce withdrawal by ' + reduction + '%',
+        percentage: reduction
+      });
+    }
+
+    // Protection advice
+    if (result.protMonths > 0 && result.maxConsec > 6) {
+      analysis.recommendations.push({
+        type: 'protection',
+        text: 'Consider earlier protection trigger',
+        detail: 'Protection active ' + result.protMonths + ' months'
+      });
+    }
+  }
+
+  return analysis;
+}
+
+// Tax-efficient SIPP draw: fill up to BRL
+function calcSIPPDraw(s, year, cumInf, yearlyInflation) {
+  // Tax thresholds
+  var pa = s.taxMode === 'frozen' ? s.pa : s.pa * cumInf;
+  var brl = s.taxMode === 'frozen' ? s.brl : s.brl * cumInf;
+  
+  // Other: CPI capped at 4%
+  var otherInf = 1;
+  for (var y = 0; y < year; y++) {
+    var yInf = yearlyInflation[y] || 0.025;
+    otherInf *= (1 + Math.min(yInf, 0.04));
+  }
+  var other = s.other * otherInf;
+  
+  // State pension: full CPI
+  var statePension = year >= s.statePensionYear ? s.statePension * cumInf : 0;
+  
+  // SIPP draw fills remaining BRL space
+  var sippDraw = Math.max(0, brl - other - statePension);
+  
+  return { pa: pa, brl: brl, other: other, statePension: statePension, sippDraw: sippDraw };
+}
+
+// Navigation
+function showMainTab(tab) {
+  document.querySelectorAll('.main-tab').forEach(function(t) { t.classList.remove('active'); });
+  document.querySelectorAll('[id^="main-"]').forEach(function(el) { el.classList.add('hidden'); });
+  event.target.classList.add('active');
+  document.getElementById('main-' + tab).classList.remove('hidden');
+}
+
+function showDecisionTab(tab) {
+  document.querySelectorAll('#main-decision .sub-tab').forEach(function(t) { t.classList.remove('active'); });
+  document.querySelectorAll('[id^="decision-"]').forEach(function(el) { el.classList.add('hidden'); });
+  event.target.classList.add('active');
+  document.getElementById('decision-' + tab).classList.remove('hidden');
+  if (tab === 'taxyears') renderTaxYears();
+  if (tab === 'history') renderHistory();
+  if (tab === 'settings') loadDecisionSettings();
+}
+
+function showStressTab(tab) {
+  document.querySelectorAll('#main-stress .sub-tab').forEach(function(t) { t.classList.remove('active'); });
+  document.querySelectorAll('[id^="stress-"]').forEach(function(el) { el.classList.add('hidden'); });
+  event.target.classList.add('active');
+  document.getElementById('stress-' + tab).classList.remove('hidden');
+  if (tab === 'stresssettings') loadStressSettings();
+  // Check inputs when switching tabs
+  if (tab === 'montecarlo') checkStressInputs('mc');
+  if (tab === 'historical') checkStressInputs('hist');
+  if (tab === 'scenarios') checkStressInputs('scen');
+}
+
+// Check if stress test inputs differ from settings minimums
+function checkStressInputs(prefix) {
+  var s = getStressDB().settings;
+  var pacw = +document.getElementById(prefix + 'PACW').value;
+  var cgt = +document.getElementById(prefix + 'CGT').value;
+  var csh2 = +document.getElementById(prefix + 'CSH2').value;
+  var warningEl = document.getElementById(prefix + 'InputWarning');
+
+  var diffs = [];
+  if (pacw !== s.pacwMin) diffs.push('PACW: £' + pacw.toLocaleString() + ' vs min £' + s.pacwMin.toLocaleString());
+  if (cgt !== s.cgtMin) diffs.push('CGT: £' + cgt.toLocaleString() + ' vs min £' + s.cgtMin.toLocaleString());
+  if (csh2 !== s.csh2Target) diffs.push('CSH2: £' + csh2.toLocaleString() + ' vs target £' + s.csh2Target.toLocaleString());
+
+  if (diffs.length > 0) {
+    var totalStart = pacw + cgt + csh2;
+    var totalMin = s.pacwMin + s.cgtMin + s.csh2Target;
+    var buffer = totalStart - totalMin;
+    var bufferPct = totalMin > 0 ? Math.round((buffer / totalMin) * 100) : 0;
+    var bufferStr = (buffer >= 0 ? '+' : '') + '£' + buffer.toLocaleString() + ' (' + (buffer >= 0 ? '+' : '') + bufferPct + '%)';
+
+    warningEl.innerHTML = '<strong>⚠️ Starting values differ from Settings minimums</strong> — ' + diffs.join(' | ') +
+      '<br><span style="color:var(--text-muted);">The glidepath and protection rules use Settings minimums. Buffer: ' + bufferStr + '</span>';
+    warningEl.classList.remove('hidden');
+  } else {
+    warningEl.classList.add('hidden');
+  }
+}
+
+// Decision Tool
+function getTaxYear(dateStr) { 
+  var p = dateStr.split('-'), y = +p[0], m = +p[1];
+  return m >= 4 ? (y % 100) + '/' + ((y + 1) % 100) : ((y - 1) % 100) + '/' + (y % 100);
+}
+
+function getYearNum(dateStr) { 
+  var p = dateStr.split('-'), y = +p[0], m = +p[1];
+  return Math.max(0, (m >= 4 ? y : y - 1) - 2026);
+}
+
+function generateDecision() {
+  var db = getDecisionDB();
+  var dateStr = document.getElementById('entryMonth').value;
+  var pacwVal = document.getElementById('entryPACW').value;
+  var cgtVal = document.getElementById('entryCGT').value;
+  var csh2Val = document.getElementById('entryCSH2').value;
+
+  // Validate all required fields
+  var missing = [];
+  if (!dateStr) missing.push('Month');
+  if (pacwVal === '' || pacwVal === null) missing.push('PACW Balance');
+  if (cgtVal === '' || cgtVal === null) missing.push('CGT Balance');
+  if (csh2Val === '' || csh2Val === null) missing.push('CSH2 Balance');
+
+  if (missing.length > 0) {
+    alert('Please fill in the following fields:\n\n• ' + missing.join('\n• '));
+    return;
+  }
+
+  var pacw = +pacwVal;
+  var cgt = +cgtVal;
+  var csh2 = +csh2Val;
+
+  if (isNaN(pacw) || isNaN(cgt) || isNaN(csh2)) {
+    alert('Please enter valid numbers for all balance fields.');
+    return;
+  }
+
+  var d = calcDecision(dateStr, pacw, cgt, csh2, db);
+  var idx = db.history.findIndex(function(h) { return h.date === dateStr; });
+  if (idx >= 0) db.history[idx] = d; else db.history.push(d);
+  db.history.sort(function(a, b) { return a.date.localeCompare(b.date); });
+  saveDecisionDB(db);
+  renderDecisionOutput(d);
+}
+
+function calcDecision(dateStr, pacw, cgt, csh2, db) {
+  var p = dateStr.split('-'), year = +p[0], month = +p[1];
+  var s = db.settings, ty = db.taxYears[getTaxYear(dateStr)] || db.taxYears['25/26'] || { pa: 12570, brl: 50270, hrl: 125140, cpi: 0.025, other: 0, statePension: 0 };
+  // Migration: if old data has 'aviva' but not 'other', copy it
+  if (ty.other === undefined && ty.aviva !== undefined) ty.other = ty.aviva;
+  var PA = ty.pa, BRL = ty.brl, OTHER = ty.other || 0, STATE = ty.statePension || 0;
+  var yearNum = getYearNum(dateStr);
+  
+  var cumInf = 1;
+  for (var i = 0; i < yearNum; i++) {
+    var yStr = (26+i)%100 + '/' + (27+i)%100;
+    cumInf *= 1 + ((db.taxYears[yStr] || {}).cpi || 0.025);
+  }
+  
+  var adjPACW = Math.round(calcGlidepath(s.pacwMin, yearNum, s.duration, cumInf, true));
+  var adjCGT = Math.round(calcGlidepath(s.cgtMin, yearNum, s.duration, cumInf, true));
+  var adjCSH2 = Math.round(calcGlidepath(s.csh2Target, yearNum, s.duration, cumInf, false));
+  
+  var totalGrowth = pacw + cgt, minGrowth = adjPACW + adjCGT;
+  var inProtection = false, consec = 0;
+
+  // Get prior history for protection mode calculation
+  var priorHistory = db.history.filter(function(h) {
+    return h.date < dateStr;
+  });
+
+  // Count consecutive CSH2 draws from history
+  for (var i = priorHistory.length - 1; i >= 0; i--) {
+    if (priorHistory[i].source === 'CSH2') consec++; else break;
+  }
+
+  // Check if we're continuing protection from last month
+  if (priorHistory.length && priorHistory[priorHistory.length - 1].inProtection) {
+    // Stay in protection until we recover well above minimum
+    inProtection = totalGrowth <= minGrowth + s.recoveryBuffer;
+  }
+
+  // Enter NEW protection if:
+  // 1. We're below minimum (will draw from CSH2)
+  // 2. We've had enough consecutive CSH2 draws
+  if (!inProtection && totalGrowth < minGrowth && consec + 1 >= s.consecutiveLimit) {
+    inProtection = true;
+  }
+  
+  // Calculate protection shortfall this tax year for potential catch-up
+  var taxYearStart = month >= 4 ? year : year - 1;
+  var thisTaxYearHistory = db.history.filter(function(h) {
+    var hp = h.date.split('-'), hy = +hp[0], hm = +hp[1];
+    var hTaxYearStart = hm >= 4 ? hy : hy - 1;
+    return hTaxYearStart === taxYearStart && h.date < dateStr;
+  });
+  
+  var sipp = 0, isa = 0, note = '';
+  var boostAmount = 0;
+
+  {
+    var target = s.baseSalary * cumInf;
+    var other = OTHER + STATE;
+    var maxSipp = Math.max(0, BRL - other);
+    
+    // Calculate net from gross using proper tax bands
+    function grossToNet(gross, pa, brl) {
+      if (gross <= pa) return gross;
+      if (gross <= brl) return pa + (gross - pa) * 0.8;
+      return pa + (brl - pa) * 0.8 + (gross - brl) * 0.6;
+    }
+    
+    var targetNet = grossToNet(target, PA, BRL);
+    
+    // Net from SIPP+Other+State at BRL (max we can draw tax-efficiently)
+    var maxTaxableGross = BRL;
+    var netAtBRL = grossToNet(maxTaxableGross, PA, BRL);
+    
+    // ISA needed = target net - net from taxable pensions
+    // SIPP draw fills up to BRL, so gross taxable = BRL
+    var stdSipp = maxSipp;
+    var stdIsa = Math.max(0, targetNet - netAtBRL);
+    
+    if (inProtection) {
+      sipp = (stdSipp / 12) * (1 - s.protectionFactor / 100);
+      isa = stdIsa / 12;
+      note = 'Protection';
+    } else {
+      sipp = stdSipp / 12;
+      isa = stdIsa / 12;
+      note = 'Standard';
+      
+      // TAX BOOST: Catch up on protection shortfall if funds permit
+      // Must ensure total annual SIPP+Other+State never exceeds BRL
+      
+      // Calculate what's already been drawn this tax year
+      var annualSippSoFar = 0;
+      var annualOtherSoFar = 0;
+      var annualStateSoFar = 0;
+      var protectionShortfall = 0;
+      
+      thisTaxYearHistory.forEach(function(h) {
+        annualSippSoFar += h.sipp || 0;
+        annualOtherSoFar += h.other || 0;
+        annualStateSoFar += h.state || 0;
+        if (h.inProtection && h.stdSipp) {
+          protectionShortfall += (h.stdSipp - h.sipp);
+        }
+        if (h.boostAmount > 0) {
+          protectionShortfall -= h.boostAmount;
+        }
+      });
+      
+      if (protectionShortfall > 0) {
+        // Calculate remaining months in tax year (April = month 4)
+        var monthsRemaining = month >= 4 ? (16 - month) : (4 - month);
+        if (monthsRemaining < 1) monthsRemaining = 1;
+        
+        // Calculate how much BRL headroom we have for the rest of the year
+        // Annual BRL limit minus what we've already drawn and will draw at standard rate
+        var projectedAnnualTaxable = annualSippSoFar + annualOtherSoFar + annualStateSoFar;
+        projectedAnnualTaxable += sipp + (OTHER / 12) + (STATE / 12); // This month at standard
+        projectedAnnualTaxable += (monthsRemaining - 1) * (sipp + (OTHER / 12) + (STATE / 12)); // Future months
+        
+        var brlHeadroom = BRL - projectedAnnualTaxable;
+        
+        // Only boost if we have headroom AND growth funds are healthy
+        var surplus = totalGrowth - minGrowth - s.recoveryBuffer;
+        
+        if (brlHeadroom > 0 && surplus > 0) {
+          // Max boost per month = headroom spread over remaining months
+          var maxBoostFromBRL = brlHeadroom / monthsRemaining;
+          var catchUpPerMonth = protectionShortfall / monthsRemaining;
+          var maxBoostFromSurplus = surplus / monthsRemaining;
+          
+          // Take the minimum of all constraints
+          boostAmount = Math.min(catchUpPerMonth, maxBoostFromBRL, maxBoostFromSurplus);
+          
+          if (boostAmount > 50) {
+            sipp += boostAmount;
+            note = 'Tax Boost';
+          }
+        }
+      }
+    }
+  }
+  
+  // Store stdSipp for future catch-up calculations
+  var stdSippMonthly = (BRL - (OTHER + STATE)) / 12;
+  
+  var source, reason, dPACW = 0, dCGT = 0, dCSH2 = 0, warn = '';
+  if (!inProtection && totalGrowth >= minGrowth + sipp) {
+    source = 'Growth';
+    var pS = Math.max(0, pacw - adjPACW), cS = Math.max(0, cgt - adjCGT), tot = pS + cS;
+    if (tot > 0) { dPACW = sipp * pS / tot; dCGT = sipp * cS / tot; reason = 'Healthy'; }
+    else { source = 'CSH2'; dCSH2 = sipp; reason = 'At min'; }
+  } else {
+    source = 'CSH2'; dCSH2 = sipp;
+    reason = inProtection ? 'Protection' : 'Below min';
+    if (csh2 < sipp) warn = 'CSH2 low!';
+  }
+  
+  var rebal = '';
+  var pDev = pacw - adjPACW, cDev = cgt - adjCGT;
+  if (pDev > 5000 && cDev < -5000) {
+    var mv = Math.floor(Math.min(pDev, -cDev) / 1000) * 1000;
+    if (mv >= 5000) rebal = 'Move £' + mv.toLocaleString() + ' PACW→CGT';
+  } else if (cDev > 5000 && pDev < -5000) {
+    var mv = Math.floor(Math.min(cDev, -pDev) / 1000) * 1000;
+    if (mv >= 5000) rebal = 'Move £' + mv.toLocaleString() + ' CGT→PACW';
+  }
+  
+  // CSH2 replenishment suggestion
+  var csh2Replenish = '';
+  var csh2Shortfall = adjCSH2 - csh2;
+  if (csh2Shortfall > 5000 && source === 'Growth' && !inProtection) {
+    // Only suggest replenishment when drawing from growth (healthy state)
+    var excess = totalGrowth - minGrowth - sipp;
+    if (excess > 10000) {
+      // Suggest replenishing up to 30% of shortfall or 50% of excess, whichever is smaller
+      var repAmount = Math.floor(Math.min(csh2Shortfall * 0.3, excess * 0.5) / 1000) * 1000;
+      if (repAmount >= 5000) {
+        csh2Replenish = 'Replenish CSH2: Move £' + repAmount.toLocaleString() + ' from growth funds';
+      }
+    }
+  }
+  
+  return {
+    date: dateStr, taxYear: getTaxYear(dateStr), pacw: pacw, cgt: cgt, csh2: csh2,
+    total: pacw + cgt + csh2, source: source, inProtection: inProtection,
+    consec: consec, sipp: sipp, isa: isa, other: OTHER / 12, state: STATE / 12,
+    dPACW: dPACW, dCGT: dCGT, dCSH2: dCSH2, rebal: rebal, warn: warn, reason: reason,
+    note: note, adjPACW: adjPACW, adjCGT: adjCGT, adjCSH2: adjCSH2, yearNum: yearNum,
+    stdSipp: stdSippMonthly, boostAmount: boostAmount, csh2Replenish: csh2Replenish,
+    totalGrowth: totalGrowth, minGrowth: minGrowth
+  };
+}
+
+function renderDecisionOutput(d) {
+  var cls = 'decision-box', badge = '<span class="badge badge-standard">Standard</span>';
+  if (d.inProtection) { cls += ' protection'; badge = '<span class="badge badge-protection">Protection</span>'; }
+  else if (d.boostAmount > 50) { badge = '<span class="badge" style="background:#2ea043;color:white;">Tax Boost</span>'; }
+  else if (d.source === 'CSH2') cls += ' csh2-draw';
+  
+  var src = d.source === 'Growth' ? 'PACW: £' + d.dPACW.toFixed(0) + ' | CGT: £' + d.dCGT.toFixed(0) : 'CSH2: £' + d.dCSH2.toFixed(0);
+  var grossTaxable = (d.sipp + d.other + d.state) * 12;
+  var PA = 12570, BRL = 50270;
+  var annualTax = grossTaxable <= PA ? 0 : (Math.min(grossTaxable, BRL) - PA) * 0.2;
+  var net = (d.sipp + d.other + d.state) - annualTax / 12 + d.isa;
+  
+  var h = '<div class="' + cls + '">';
+  h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">' + badge;
+  h += '<span style="font-size:12px;color:var(--text-muted);">' + d.taxYear + ' (Yr ' + d.yearNum + ')</span></div>';
+  h += '<div class="grid grid-2" style="gap:24px;"><div>';
+  h += '<div style="font-size:12px;color:var(--text-muted);">SIPP Drawdown</div>';
+  h += '<div class="amount">£' + d.sipp.toFixed(2) + '</div>';
+  h += '<div style="font-size:13px;"><strong>Source:</strong> ' + d.source + '<br><span style="color:var(--text-muted);font-family:monospace;">' + src + '</span></div>';
+  h += '<div style="margin-top:12px;padding:12px;background:rgba(0,0,0,0.2);border-radius:8px;font-size:12px;">';
+  h += '<strong>Glidepath:</strong><br>PACW: £' + d.adjPACW.toLocaleString() + '<br>CGT: £' + d.adjCGT.toLocaleString() + '<br>CSH2: £' + d.adjCSH2.toLocaleString() + '</div></div>';
+  h += '<div><div style="font-size:12px;color:var(--text-muted);">Income</div>';
+  h += '<div class="tax-breakdown" style="margin-top:8px;">';
+  h += '<div class="tax-row" style="color:var(--primary);"><span>SIPP</span><span>£' + d.sipp.toFixed(2) + '</span></div>';
+  h += '<div class="tax-row"><span>Other</span><span>£' + d.other.toFixed(2) + '</span></div>';
+  if (d.state > 0) h += '<div class="tax-row" style="color:var(--success);"><span>State</span><span>£' + d.state.toFixed(2) + '</span></div>';
+  h += '<div class="tax-row" style="color:var(--accent);"><span>ISA</span><span>£' + d.isa.toFixed(2) + '</span></div>';
+  h += '<div class="tax-row total"><span>Net</span><span>£' + net.toFixed(2) + '</span></div></div></div></div>';
+  h += '<div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);font-size:13px;color:var(--text-muted);">' + d.reason + ' | ' + d.note + '</div>';
+  if (d.warn) h += '<div class="alert alert-danger" style="margin-top:12px;">' + d.warn + '</div>';
+  if (d.boostAmount > 50) h += '<div class="alert alert-success" style="margin-top:12px;">📈 Tax Boost: +£' + d.boostAmount.toFixed(0) + '/mo catch-up from protection shortfall</div>';
+  if (d.rebal) h += '<div class="alert alert-warning" style="margin-top:12px;">⚖️ ' + d.rebal + '</div>';
+  if (d.csh2Replenish) h += '<div class="alert alert-info" style="margin-top:12px;">💰 ' + d.csh2Replenish + '</div>';
+  
+  // Debug info
+  h += '<div class="alert alert-info" style="margin-top:12px;font-size:11px;">';
+  h += '<strong>Debug:</strong> Growth: £' + d.totalGrowth.toLocaleString() + ' | Min: £' + d.minGrowth.toLocaleString();
+  h += ' | Consec CSH2: ' + d.consec + ' | Below min? ' + (d.totalGrowth < d.minGrowth ? 'YES' : 'NO');
+  h += '</div>';
+  
+  h += '</div>';
+  document.getElementById('decisionOutput').innerHTML = h;
+}
+
+function renderHistory() {
+  var db = getDecisionDB(), tbody = document.getElementById('historyBody');
+  if (!db.history.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);">No history</td></tr>'; return; }
+  tbody.innerHTML = db.history.slice().reverse().map(function(h) {
+    var icon = h.inProtection ? '🛡️' : (h.boostAmount > 50 ? '📈' : '✓');
+    return '<tr><td><strong>' + h.date + '</strong></td><td>' + icon + '</td><td>£' + h.total.toLocaleString() + '</td><td>£' + h.sipp.toFixed(0) + '</td><td>' + h.source + '</td><td style="font-size:11px;color:var(--text-muted);">' + (h.rebal || '') + '</td><td><button class="small secondary" onclick="delHistory(\'' + h.date + '\')">🗑️</button></td></tr>';
+  }).join('');
+}
+
+function renderTaxYears() {
+  var db = getDecisionDB();
+  // Sort tax years by year (e.g., '25/26' -> 25, '37/38' -> 37)
+  var sortedEntries = Object.entries(db.taxYears).sort(function(a, b) {
+    var yearA = parseInt(a[0].split('/')[0], 10);
+    var yearB = parseInt(b[0].split('/')[0], 10);
+    return yearA - yearB;
+  });
+  var html = sortedEntries.map(function(e) {
+    var ty = e[0], c = e[1];
+    return '<div class="card" style="background:var(--card-alt);margin-bottom:12px;padding:16px;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">' +
+      '<strong style="color:var(--primary);">' + ty + '</strong>' +
+      '<button class="small secondary" onclick="delTaxYear(\'' + ty + '\')">Delete</button></div>' +
+      '<div class="grid grid-6">' +
+      '<div><label>PA</label><input type="number" value="' + c.pa + '" onchange="updTaxYear(\'' + ty + '\',\'pa\',this.value)"></div>' +
+      '<div><label>BRL</label><input type="number" value="' + c.brl + '" onchange="updTaxYear(\'' + ty + '\',\'brl\',this.value)"></div>' +
+      '<div><label>HRL</label><input type="number" value="' + (c.hrl || 125140) + '" onchange="updTaxYear(\'' + ty + '\',\'hrl\',this.value)"></div>' +
+      '<div><label>CPI</label><input type="number" step="0.001" value="' + c.cpi + '" onchange="updTaxYear(\'' + ty + '\',\'cpi\',this.value)"></div>' +
+      '<div><label>Other</label><input type="number" value="' + c.other + '" onchange="updTaxYear(\'' + ty + '\',\'other\',this.value)"></div>' +
+      '<div><label>State Pension</label><input type="number" value="' + (c.statePension || 0) + '" onchange="updTaxYear(\'' + ty + '\',\'statePension\',this.value)"></div>' +
+      '</div></div>';
+  }).join('');
+  document.getElementById('taxYearsList').innerHTML = html;
+}
+
+function updTaxYear(ty, f, v) { var db = getDecisionDB(); db.taxYears[ty][f] = parseFloat(v); saveDecisionDB(db); }
+function addTaxYear() {
+  // Use custom modal instead of prompt() which can be unreliable in Electron
+  var modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:10000;';
+  modal.innerHTML = '<div style="background:var(--card);padding:24px;border-radius:8px;min-width:300px;">' +
+    '<h3 style="margin:0 0 16px 0;color:var(--primary);">Add Tax Year</h3>' +
+    '<input type="text" id="newTaxYearInput" placeholder="e.g. 28/29" style="width:100%;margin-bottom:16px;padding:10px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;">' +
+    '<div style="display:flex;gap:10px;justify-content:flex-end;">' +
+    '<button class="secondary" onclick="this.closest(\'div\').parentElement.remove()">Cancel</button>' +
+    '<button class="primary" id="confirmAddTaxYear">Add</button>' +
+    '</div></div>';
+  document.body.appendChild(modal);
+  var input = document.getElementById('newTaxYearInput');
+  input.focus();
+
+  function doAdd() {
+    var ty = input.value.trim();
+    if (!ty || !/^\d{2}\/\d{2}$/.test(ty)) { alert('Invalid format. Use YY/YY (e.g. 28/29)'); return; }
+    var db = getDecisionDB();
+    if (db.taxYears[ty]) { alert('Tax year ' + ty + ' already exists'); return; }
+    db.taxYears[ty] = { pa: 12570, brl: 50270, hrl: 125140, cpi: 0.025, other: 4000, statePension: 0 };
+    saveDecisionDB(db);
+    renderTaxYears();
+    modal.remove();
+  }
+
+  document.getElementById('confirmAddTaxYear').onclick = doAdd;
+  input.onkeypress = function(e) { if (e.key === 'Enter') doAdd(); };
+  modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+}
+function delTaxYear(ty) { if (!confirm('Delete ' + ty + '?')) return; var db = getDecisionDB(); delete db.taxYears[ty]; saveDecisionDB(db); renderTaxYears(); }
+function delHistory(d) { var db = getDecisionDB(); db.history = db.history.filter(function(h) { return h.date !== d; }); saveDecisionDB(db); renderHistory(); }
+function clearHistory() { if (!confirm('Clear all?')) return; var db = getDecisionDB(); db.history = []; saveDecisionDB(db); renderHistory(); }
+
+function loadDecisionSettings() {
+  var s = getDecisionDB().settings;
+  document.getElementById('dsPACWMin').value = s.pacwMin;
+  document.getElementById('dsCGTMin').value = s.cgtMin;
+  document.getElementById('dsCSH2Target').value = s.csh2Target;
+  document.getElementById('dsDuration').value = s.duration;
+  document.getElementById('dsBaseSalary').value = s.baseSalary;
+  document.getElementById('dsProtectionFactor').value = s.protectionFactor;
+  document.getElementById('dsRecoveryBuffer').value = s.recoveryBuffer;
+  document.getElementById('dsConsecutiveLimit').value = s.consecutiveLimit;
+}
+
+function saveDecisionSettings() {
+  var db = getDecisionDB();
+  db.settings.pacwMin = +document.getElementById('dsPACWMin').value;
+  db.settings.cgtMin = +document.getElementById('dsCGTMin').value;
+  db.settings.csh2Target = +document.getElementById('dsCSH2Target').value;
+  db.settings.duration = +document.getElementById('dsDuration').value;
+  db.settings.baseSalary = +document.getElementById('dsBaseSalary').value;
+  db.settings.protectionFactor = +document.getElementById('dsProtectionFactor').value;
+  db.settings.recoveryBuffer = +document.getElementById('dsRecoveryBuffer').value;
+  db.settings.consecutiveLimit = +document.getElementById('dsConsecutiveLimit').value;
+  saveDecisionDB(db); alert('Saved!');
+}
+
+// STRESS TESTER
+function seededRng(seed) { var s = seed; return function() { s = Math.sin(s) * 10000; return s - Math.floor(s); }; }
+function gauss(m, std, rng) { return Math.sqrt(-2 * Math.log(rng())) * Math.cos(2 * Math.PI * rng()) * std + m; }
+function cgtReturn(inf, eq, prevInf, rng) {
+  // CGT-style adaptive allocation with realistic imperfections
+  
+  // Base allocation (normal times)
+  var linkerWeight = 0.15;   // Index-linked gilts
+  var nomBondWeight = 0.30;  // Nominal bonds
+  var propertyWeight = 0.20; // Property
+  var commodityWeight = 0.10;// Commodities  
+  var cashWeight = 0.10;     // Cash
+  var equityWeight = 0.15;   // Partial equity exposure
+  
+  // Regime detection - but with lag (use previous year's inflation, not current)
+  // This models delayed recognition of inflation regime
+  var laggedInf = prevInf !== undefined ? prevInf : inf;
+  var highInflation = laggedInf > 0.045; // Recognise inflation > 4.5%
+  var veryHighInflation = laggedInf > 0.07; // Serious stagflation > 7%
+  
+  if (highInflation) {
+    // Shift towards inflation protection - but not perfectly
+    // 30% chance they're slow to react or get it partially wrong
+    var reactionQuality = rng() > 0.30 ? 1.0 : 0.5;
+    
+    if (veryHighInflation) {
+      // Aggressive shift to linkers
+      linkerWeight = 0.15 + (0.35 * reactionQuality);  // Up to 50%
+      nomBondWeight = 0.30 - (0.20 * reactionQuality); // Down to 10%
+      equityWeight = 0.15 - (0.10 * reactionQuality);  // Down to 5%
+      commodityWeight = 0.10 + (0.05 * reactionQuality); // Up slightly
+    } else {
+      // Moderate shift
+      linkerWeight = 0.15 + (0.20 * reactionQuality);  // Up to 35%
+      nomBondWeight = 0.30 - (0.10 * reactionQuality); // Down to 20%
+      equityWeight = 0.15 - (0.05 * reactionQuality);  // Down to 10%
+    }
+  }
+  
+  // 15% chance of mistimed reversion (shift back too early even if inflation still high)
+  if (highInflation && rng() < 0.15) {
+    linkerWeight = 0.20;
+    nomBondWeight = 0.25;
+    equityWeight = 0.12;
+  }
+  
+  // Asset returns
+  var linkerReturn = inf + 0.005 + gauss(0, 0.03, rng);  // Inflation + small real + low vol
+  var nomBondReturn = 0.04 - (inf > 0.04 ? (inf - 0.04) * 0.5 : 0) + gauss(0, 0.05, rng); // Hurt by high inflation
+  var propertyReturn = 0.03 + inf * 0.3 + gauss(0, 0.08, rng); // Partial inflation hedge
+  var commodityReturn = inf * 0.8 + gauss(0, 0.15, rng); // Good inflation hedge, volatile
+  var cashReturn = Math.max(0.005, inf + 0.005);
+  var equityReturn = eq * 0.5 + gauss(0, 0.02, rng); // Dampened equity exposure
+  
+  // Weighted return
+  return linkerWeight * linkerReturn +
+         nomBondWeight * nomBondReturn +
+         propertyWeight * propertyReturn +
+         commodityWeight * commodityReturn +
+         cashWeight * cashReturn +
+         equityWeight * equityReturn;
+}
+
+function simulate(config, returns, seed) {
+  var rng = seededRng(seed || 42);
+  var s = getStressDB().settings;
+  var pacw = config.pacwStart, cgt = config.cgtStart, csh2 = config.csh2Start;
+  var consec = 0, prot = false, cumInf = 1;
+  var hist = [], failed = false, failMonth = null;
+  var protMonths = 0, maxConsec = 0, curStreak = 0;
+  var yearlyInf = [];
+
+  // HODL (Break Glass) - RICA (Ruffer Investment Company) emergency reserve
+  var hodl = s.hodlEnabled ? (config.hodlStart !== undefined ? config.hodlStart : s.hodlValue) : 0;
+  var hodlUsed = 0;
+  var hodlUsedMonth = null;
+
+  // Tax boost tracking: shortfall within current tax year
+  var taxYearShortfall = 0;
+  var lastTaxYearStart = -1;
+  
+  for (var month = 0; month < config.years * 12; month++) {
+    var year = Math.floor(month / 12);
+    var monthInYear = month % 12;
+    
+    // Tax year runs April (month 3 in 0-indexed) to March
+    // Determine which tax year we're in
+    var taxYearStart = monthInYear >= 3 ? year : year - 1;
+    
+    // Reset shortfall at start of new tax year
+    if (taxYearStart !== lastTaxYearStart) {
+      taxYearShortfall = 0;
+      lastTaxYearStart = taxYearStart;
+    }
+    
+    // Track yearly inflation for Other calc
+    if (month > 0 && month % 12 === 0) {
+      var inf = returns.inflation[year] || 0.025;
+      yearlyInf.push(inf);
+      cumInf *= (1 + inf);
+    }
+    if (year === 0 && month === 0) yearlyInf = [];
+    
+    // Glidepath minimums
+    var pacwMin = calcGlidepath(s.pacwMin, year, s.duration, cumInf, true);
+    var cgtMin = calcGlidepath(s.cgtMin, year, s.duration, cumInf, true);
+    var csh2Max = calcGlidepath(s.csh2Target, year, s.duration, cumInf, false);
+    
+    // SIPP draw with Other capped at 4% CPI
+    var tax = calcSIPPDraw(s, year, cumInf, yearlyInf);
+    var annualDraw = tax.sippDraw;
+    var standardMonthDraw = annualDraw / 12;
+    var effectiveDraw = prot ? annualDraw * s.protectionMult : annualDraw;
+    var monthDraw = effectiveDraw / 12;
+    
+    // Track protection shortfall
+    if (prot) {
+      taxYearShortfall += (standardMonthDraw - monthDraw);
+    }
+    
+    // Returns
+    var inf = returns.inflation[year] || 0.025;
+    var prevInf = year > 0 ? (returns.inflation[year - 1] || 0.025) : inf;
+    var eq = returns.equity[year] || 0;
+    var cgtR = cgtReturn(inf, eq, prevInf, rng);
+    var csh2R = Math.max(0.005, inf + 0.012);
+    
+    pacw *= (1 + Math.pow(1 + eq, 1/12) - 1);
+    cgt *= (1 + Math.pow(1 + cgtR, 1/12) - 1);
+    csh2 *= (1 + Math.pow(1 + csh2R, 1/12) - 1);
+
+    // HODL: RICA (Ruffer Investment Company) - multi-asset absolute return fund
+    // Key characteristics from historical data (2004-2025):
+    // - Mean annual return: ~6.9%, Volatility: ~6%, Max drawdown: ~10%
+    // - Crucially: negative correlation to equities during crashes
+    // - 2008: +16% while equities -34%, 2022: +8% while equities -9%
+    // Model: base return with volatility, plus defensive boost when equities fall
+    if (hodl > 0) {
+      var ricaBase = 0.069; // 6.9% mean annual return
+      var ricaVol = 0.06;   // 6% annual volatility
+
+      // Generate correlated return - RICA tends to do well when equities struggle
+      // Use the same random component but with negative correlation during downturns
+      var ricaRandom = (rng() - 0.5) * 2 * ricaVol;
+
+      // Defensive boost: when equities fall significantly, RICA historically gains
+      // This models their VIX options, gold, and defensive positioning
+      var defensiveBoost = 0;
+      if (eq < -0.10) {
+        // Severe equity downturn: RICA's protection strategies kick in
+        defensiveBoost = Math.min(0.15, Math.abs(eq) * 0.4); // Up to 15% boost
+      } else if (eq < -0.05) {
+        // Moderate downturn: partial protection
+        defensiveBoost = Math.abs(eq) * 0.2;
+      }
+
+      var hodlR = ricaBase + ricaRandom + defensiveBoost;
+      // Cap at historical bounds: worst year -6.2%, best ~+16%
+      hodlR = Math.max(-0.08, Math.min(0.18, hodlR));
+
+      hodl *= (1 + Math.pow(1 + hodlR, 1/12) - 1);
+    }
+
+    var totalGrowth = pacw + cgt, minGrowth = pacwMin + cgtMin;
+    
+    // Exit protection
+    if (prot && totalGrowth > minGrowth + 5000) {
+      prot = false; consec = 0;
+      maxConsec = Math.max(maxConsec, curStreak);
+      curStreak = 0;
+    }
+    if (prot) { protMonths++; curStreak++; }
+    
+    // TAX BOOST: After protection ends, try to catch up on shortfall
+    var boostAmount = 0;
+    if (!prot && taxYearShortfall > 0 && totalGrowth > minGrowth + 15000) {
+      // Calculate months remaining in tax year (April = month index 3)
+      var monthsToApril = monthInYear >= 3 ? (15 - monthInYear) : (3 - monthInYear);
+      if (monthsToApril < 1) monthsToApril = 1;
+      
+      // Surplus available for boost
+      var surplus = totalGrowth - minGrowth - 15000;
+      
+      // Spread catch-up, capped by surplus
+      var catchUpPerMonth = Math.min(taxYearShortfall / monthsToApril, surplus / monthsToApril);
+      var maxBoost = standardMonthDraw * 0.5; // Cap boost at 50% of standard draw
+      boostAmount = Math.min(catchUpPerMonth, maxBoost);
+      
+      if (boostAmount > 50) {
+        monthDraw += boostAmount;
+        taxYearShortfall -= boostAmount;
+      }
+    }
+    
+    // Withdraw
+    if (!prot && totalGrowth >= minGrowth + monthDraw) {
+      var pS = Math.max(0, pacw - pacwMin), cS = Math.max(0, cgt - cgtMin), tot = pS + cS;
+      if (tot > 0) {
+        pacw -= monthDraw * pS / tot;
+        cgt -= monthDraw * cS / tot;
+        consec = 0;
+        // Replenish CSH2
+        if (csh2 < csh2Max) {
+          var excess = totalGrowth - minGrowth - monthDraw;
+          if (excess > 5000) {
+            var rep = Math.min((csh2Max - csh2) * 0.3, excess * 0.5);
+            pacw -= rep * pS / tot;
+            cgt -= rep * cS / tot;
+            csh2 += rep;
+          }
+        }
+      } else { csh2 -= monthDraw; }
+    } else {
+      if (csh2 >= monthDraw) {
+        csh2 -= monthDraw;
+        consec++;
+        if (!s.disableProtection && consec >= s.consecutiveLimit) prot = true;
+      } else {
+        var rem = monthDraw - csh2;
+        csh2 = 0;
+        if (cgt > rem) cgt -= rem;
+        else if (pacw > rem) pacw -= rem;
+        else if (hodl > rem) {
+          // BREAK GLASS: Use HODL emergency reserve
+          hodl -= rem;
+          hodlUsed += rem;
+          if (hodlUsedMonth === null) hodlUsedMonth = month;
+        }
+        else { failed = true; failMonth = month; }
+      }
+    }
+
+    if (month % 12 === 0) {
+      hist.push({ year: year, total: pacw + cgt + csh2, pacw: pacw, cgt: cgt, csh2: csh2, hodl: hodl, prot: prot, pacwMin: pacwMin, cgtMin: cgtMin, csh2Max: csh2Max, sippDraw: annualDraw });
+    }
+    if (failed) break;
+  }
+  maxConsec = Math.max(maxConsec, curStreak);
+  return { hist: hist, failed: failed, failMonth: failMonth, years: failed ? failMonth / 12 : config.years, final: pacw + cgt + csh2, finalHodl: hodl, hodlUsed: hodlUsed, hodlUsedMonth: hodlUsedMonth, protMonths: protMonths, maxConsec: maxConsec, seed: seed };
+}
+
+function runMonteCarlo() {
+  var runs = 1000, samples = +document.getElementById('mcSampleLines').value || 100;
+  var cfg = { pacwStart: +document.getElementById('mcPACW').value, cgtStart: +document.getElementById('mcCGT').value, csh2Start: +document.getElementById('mcCSH2').value, years: +document.getElementById('mcYears').value };
+  var yrs = Object.keys(EQUITY_RETURNS).map(Number).sort(function(a,b){return a-b;});
+  var results = [];
+  
+  for (var i = 0; i < runs; i++) {
+    var rng = seededRng(i * 12345), ret = { equity: {}, inflation: {} };
+    for (var y = 0; y < cfg.years; y++) {
+      var ry = yrs[Math.floor(rng() * yrs.length)];
+      ret.equity[y] = EQUITY_RETURNS[ry];
+      ret.inflation[y] = INFLATION[ry] || 0.025;
+    }
+    results.push(simulate(cfg, ret, i));
+  }
+  
+  var fails = results.filter(function(r){return r.failed;});
+  var succ = results.filter(function(r){return !r.failed;});
+  var rate = ((runs - fails.length) / runs * 100).toFixed(1);
+  var survYrs = results.map(function(r){return r.years;}).sort(function(a,b){return a-b;});
+  var finals = succ.map(function(r){return r.final;}).sort(function(a,b){return a-b;});
+  var p10 = survYrs[Math.floor(runs * 0.1)];
+  var median = finals[Math.floor(finals.length * 0.5)] || 0;
+  var protArr = results.map(function(r){return r.protMonths;});
+  var avgProt = protArr.reduce(function(a,b){return a+b;}, 0) / runs;
+  var withProt = results.filter(function(r){return r.protMonths > 0;}).length;
+  var maxCons = Math.max.apply(null, results.map(function(r){return r.maxConsec;}));
+  
+  // Percentile data
+  var pctData = [];
+  for (var yr = 0; yr <= cfg.years; yr++) {
+    var tots = results.map(function(r) {
+      var h = r.hist.find(function(h){return h.year === yr;});
+      return h ? h.total : 0;
+    }).sort(function(a,b){return a-b;});
+    pctData.push({ 
+      year: yr, 
+      p5: tots[Math.floor(runs*0.05)]||0,
+      p10: tots[Math.floor(runs*0.1)]||0, 
+      p25: tots[Math.floor(runs*0.25)]||0, 
+      p50: tots[Math.floor(runs*0.5)]||0, 
+      p75: tots[Math.floor(runs*0.75)]||0, 
+      p90: tots[Math.floor(runs*0.9)]||0,
+      p95: tots[Math.floor(runs*0.95)]||0
+    });
+  }
+  
+  var glide = results[0].hist.map(function(h) { return { year: h.year, min: h.pacwMin + h.cgtMin + h.csh2Max }; });
+  
+  var step = Math.floor(runs / samples);
+  var sampleRuns = [];
+  for (var i = 0; i < samples && i * step < runs; i++) sampleRuns.push(results[i * step]);
+  
+  var s = getStressDB().settings;
+  var yr0 = calcSIPPDraw(s, 0, 1, []);
+  var yr12 = calcSIPPDraw(s, 12, Math.pow(1.025, 12), [0.025,0.025,0.025,0.025,0.025,0.025,0.025,0.025,0.025,0.025,0.025,0.025]);
+
+  // HODL statistics
+  var hodlEnabled = s.hodlEnabled;
+  var runsUsingHodl = results.filter(function(r) { return r.hodlUsed > 0; }).length;
+  var avgHodlUsed = runsUsingHodl > 0 ? results.filter(function(r) { return r.hodlUsed > 0; }).reduce(function(a, r) { return a + r.hodlUsed; }, 0) / runsUsingHodl : 0;
+  var maxHodlUsed = Math.max.apply(null, results.map(function(r) { return r.hodlUsed || 0; }));
+  var savedByHodl = results.filter(function(r) { return r.hodlUsed > 0 && !r.failed; }).length;
+
+  // Additional stats
+  var finalP10 = finals[Math.floor(finals.length * 0.1)] || 0;
+  var finalP90 = finals[Math.floor(finals.length * 0.9)] || 0;
+  var avgFinal = succ.reduce(function(a, r) { return a + r.final; }, 0) / (succ.length || 1);
+  var maxProt = Math.max.apply(null, protArr);
+  
+  // Calculate buffers
+  var totalStart = cfg.pacwStart + cfg.cgtStart + cfg.csh2Start;
+  var totalMin = s.pacwMin + s.cgtMin + s.csh2Target;
+  var buffer = totalStart - totalMin;
+  var bufferPct = totalMin > 0 ? Math.round((buffer / totalMin) * 100) : 0;
+
+  var h = '';
+
+  // Show info about starting values vs settings
+  if (buffer !== 0) {
+    var bufferClass = buffer > 0 ? 'info-box' : 'warning-box';
+    var bufferIcon = buffer > 0 ? 'ℹ️' : '⚠️';
+    h += '<div class="' + bufferClass + '" style="margin-bottom:20px;">';
+    h += '<strong>' + bufferIcon + ' Starting Values vs Settings:</strong><br>';
+    h += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:10px 0;">';
+    h += '<div><strong>Starting:</strong> £' + totalStart.toLocaleString() + '<br><span style="font-size:11px;color:var(--text-muted);">PACW: £' + cfg.pacwStart.toLocaleString() + ' | CGT: £' + cfg.cgtStart.toLocaleString() + ' | CSH2: £' + cfg.csh2Start.toLocaleString() + '</span></div>';
+    h += '<div><strong>Minimums (Settings):</strong> £' + totalMin.toLocaleString() + '<br><span style="font-size:11px;color:var(--text-muted);">PACW: £' + s.pacwMin.toLocaleString() + ' | CGT: £' + s.cgtMin.toLocaleString() + ' | CSH2: £' + s.csh2Target.toLocaleString() + '</span></div>';
+    h += '<div><strong>Buffer:</strong> ' + (buffer >= 0 ? '+' : '') + '£' + buffer.toLocaleString() + ' (' + (buffer >= 0 ? '+' : '') + bufferPct + '%)<br><span style="font-size:11px;color:var(--text-muted);">Cushion above glidepath floor</span></div>';
+    h += '</div>';
+    if (buffer > totalMin * 0.5) {
+      h += '<span style="font-size:12px;">Large buffer provides significant protection against market downturns.</span>';
+    } else if (buffer < 0) {
+      h += '<span style="font-size:12px;color:var(--warning);">Starting below minimums - protection mode will activate immediately.</span>';
+    }
+    h += '</div>';
+  }
+
+  h += '<div class="warning-box" style="margin-bottom:20px;">';
+  h += '<strong>💷 Tax: ' + (s.taxMode === 'frozen' ? 'FROZEN' : 'INFLATING') + '</strong> | ';
+  h += '<strong>🛡️ Protection: ' + (s.disableProtection ? '<span style="color:#f85149;">DISABLED</span>' : 'ENABLED') + '</strong> | ';
+  h += '<strong>🔒 HODL: ' + (hodlEnabled ? '£' + s.hodlValue.toLocaleString() : '<span style="color:#8b949e;">OFF</span>') + '</strong> | ';
+  h += 'Yr0: £' + Math.round(yr0.sippDraw).toLocaleString() + '/yr | Yr12+: ~£' + Math.round(yr12.sippDraw).toLocaleString() + '/yr';
+  h += '</div>';
+  
+  h += '<div class="grid grid-6" style="margin-bottom:24px;">';
+  h += '<div class="stat-box ' + (rate >= 90 ? 'success' : rate >= 80 ? 'warning' : 'danger') + '"><div class="stat-value">' + rate + '%</div><div class="stat-label">Success Rate</div></div>';
+  h += '<div class="stat-box danger"><div class="stat-value">' + fails.length + '</div><div class="stat-label">Failures</div></div>';
+  h += '<div class="stat-box"><div class="stat-value">' + p10.toFixed(1) + '</div><div class="stat-label">10th %ile Years</div></div>';
+  h += '<div class="stat-box success"><div class="stat-value">£' + (median/1e6).toFixed(2) + 'M</div><div class="stat-label">Median Final</div></div>';
+  h += '<div class="stat-box info"><div class="stat-value">' + withProt + '</div><div class="stat-label">Runs w/ Protection</div></div>';
+  h += '<div class="stat-box warning"><div class="stat-value">' + avgProt.toFixed(0) + '</div><div class="stat-label">Avg Protection Mo</div></div>';
+  h += '</div>';
+  
+  // Additional stats row
+  h += '<div class="grid grid-4" style="margin-bottom:24px;">';
+  h += '<div class="stat-box"><div class="stat-value">£' + (finalP10/1e6).toFixed(2) + 'M</div><div class="stat-label">10th %ile Final</div></div>';
+  h += '<div class="stat-box"><div class="stat-value">£' + (finalP90/1e6).toFixed(2) + 'M</div><div class="stat-label">90th %ile Final</div></div>';
+  h += '<div class="stat-box"><div class="stat-value">£' + (avgFinal/1e6).toFixed(2) + 'M</div><div class="stat-label">Avg Final (success)</div></div>';
+  h += '<div class="stat-box warning"><div class="stat-value">' + maxProt + '</div><div class="stat-label">Max Protection Mo</div></div>';
+  h += '</div>';
+
+  // HODL stats row (only if enabled)
+  if (hodlEnabled) {
+    h += '<div class="grid grid-4" style="margin-bottom:24px;">';
+    h += '<div class="stat-box" style="border-color:#f0c674;"><div class="stat-value">' + runsUsingHodl + '</div><div class="stat-label">Runs Using HODL</div></div>';
+    h += '<div class="stat-box ' + (savedByHodl > 0 ? 'success' : '') + '"><div class="stat-value">' + savedByHodl + '</div><div class="stat-label">Saved by HODL</div></div>';
+    h += '<div class="stat-box"><div class="stat-value">£' + Math.round(avgHodlUsed).toLocaleString() + '</div><div class="stat-label">Avg HODL Used</div></div>';
+    h += '<div class="stat-box warning"><div class="stat-value">£' + Math.round(maxHodlUsed).toLocaleString() + '</div><div class="stat-label">Max HODL Used</div></div>';
+    h += '</div>';
+  }
+
+  var alertCls = rate >= 90 ? 'alert-success' : rate >= 80 ? 'alert-warning' : 'alert-danger';
+  var alertMsg = rate >= 90 ? 'Excellent! Very high probability of success.' : rate >= 80 ? 'Good but some downside risk. Consider adjustments.' : 'Warning: Significant risk of depletion.';
+  h += '<div class="alert ' + alertCls + '">' + alertMsg + '</div>';
+  
+  h += '<div class="chart-container"><div class="chart-title">Cone of Uncertainty (5th-95th Percentile)</div><canvas id="coneChart" width="1100" height="400"></canvas>';
+  h += '<div class="legend"><div class="legend-item"><div class="legend-dot" style="background:rgba(240,198,116,0.15);"></div> 5-95%</div><div class="legend-item"><div class="legend-dot" style="background:rgba(240,198,116,0.2);"></div> 10-90%</div><div class="legend-item"><div class="legend-dot" style="background:rgba(240,198,116,0.35);"></div> 25-75%</div><div class="legend-item"><div class="legend-dot" style="background:#f0c674;"></div> Median</div><div class="legend-item"><div class="legend-dot" style="background:#7eb8da;"></div> Glidepath Min</div><div class="legend-item"><div class="legend-dot" style="background:rgba(248,81,73,0.6);"></div> 10th %ile</div></div></div>';
+  
+  h += '<div class="chart-container"><div class="chart-title">Sample Trajectories (' + samples + ' runs)</div><canvas id="trajChart" width="1100" height="350"></canvas>';
+  h += '<div class="legend"><div class="legend-item"><div class="legend-dot" style="background:rgba(46,160,67,0.5);"></div> Success</div><div class="legend-item"><div class="legend-dot" style="background:rgba(248,81,73,0.8);"></div> Failed</div><div class="legend-item"><div class="legend-dot" style="background:#7eb8da;"></div> Glidepath Min</div></div></div>';
+  
+  h += '<div class="grid grid-2">';
+  h += '<div class="chart-container"><div class="chart-title">Protection Distribution (hover for details)</div><canvas id="protChart" width="500" height="300"></canvas></div>';
+  h += '<div class="card" style="margin:20px 0;"><h3 style="margin-top:0;">Protection Stats</h3><div class="grid grid-2">';
+  h += '<div class="stat-box"><div class="stat-value">' + withProt + '</div><div class="stat-label">Runs</div></div>';
+  h += '<div class="stat-box"><div class="stat-value">' + ((withProt/runs)*100).toFixed(1) + '%</div><div class="stat-label">%</div></div>';
+  h += '<div class="stat-box"><div class="stat-value">' + avgProt.toFixed(1) + '</div><div class="stat-label">Avg Mo.</div></div>';
+  h += '<div class="stat-box warning"><div class="stat-value">' + maxCons + '</div><div class="stat-label">Max Consec</div></div>';
+  h += '</div></div></div>';
+  
+  // Add tooltip div
+  h += '<div id="chartTooltip" style="display:none;position:fixed;background:rgba(30,30,30,0.95);border:1px solid #555;border-radius:6px;padding:10px 14px;font-size:12px;color:#fff;pointer-events:none;z-index:1000;max-width:280px;box-shadow:0 4px 12px rgba(0,0,0,0.4);"></div>';
+  
+  document.getElementById('mcResults').innerHTML = h;
+  
+  // Store data globally for tooltip access
+  window.mcData = { runs: sampleRuns, years: cfg.years, start: cfg.pacwStart + cfg.cgtStart + cfg.csh2Start, glide: glide, protArr: protArr, pctData: pctData };
+  
+  drawCone(pctData, glide, cfg.years);
+  drawTraj(sampleRuns, cfg.years, cfg.pacwStart + cfg.cgtStart + cfg.csh2Start, glide);
+  drawProt(protArr);
+}
+
+// Global chart parameters for hit detection
+var trajChartParams = null;
+var protChartParams = null;
+var trajHighlightIdx = -1; // Track currently highlighted trajectory
+
+function drawTraj(runs, years, start, glide, canvasId, analysisData) {
+  var c = document.getElementById(canvasId || 'trajChart');
+  if (!c) return;
+  var ctx = c.getContext('2d');
+  var W = c.width, H = c.height, pad = { l: 80, r: 40, t: 20, b: 50 };
+  ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.fillRect(0, 0, W, H);
+  
+  // Use 95th percentile for max to avoid outlier blowing scale
+  var allTotals = [];
+  runs.forEach(function(r) { r.hist.forEach(function(h) { allTotals.push(h.total); }); });
+  allTotals.sort(function(a,b) { return a - b; });
+  var max = allTotals[Math.floor(allTotals.length * 0.95)] * 1.2;
+  max = Math.max(max, start * 1.5);
+  
+  var xS = function(y) { return pad.l + (y / years) * (W - pad.l - pad.r); };
+  var yS = function(v) { return H - pad.b - (Math.min(v, max) / max) * (H - pad.t - pad.b); };
+  
+  // Distance from point to line segment
+  function distToSegment(px, py, x1, y1, x2, y2) {
+    var dx = x2 - x1, dy = y2 - y1;
+    var len2 = dx * dx + dy * dy;
+    if (len2 === 0) return Math.sqrt((px - x1) * (px - x1) + (py - y1) * (py - y1));
+    var t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / len2));
+    var projX = x1 + t * dx, projY = y1 + t * dy;
+    return Math.sqrt((px - projX) * (px - projX) + (py - projY) * (py - projY));
+  }
+  
+  // Store paths for hit detection
+  var paths = [];
+  
+  // Grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 1;
+  for (var i = 0; i <= 5; i++) { var y = pad.t + (i/5) * (H - pad.t - pad.b); ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke(); }
+  
+  // Labels
+  ctx.fillStyle = '#8b8b9b'; ctx.font = '11px sans-serif'; ctx.textAlign = 'right';
+  for (var i = 0; i <= 5; i++) { ctx.fillText('£' + (max*(1-i/5)/1e6).toFixed(1) + 'M', pad.l - 10, pad.t + (i/5)*(H-pad.t-pad.b) + 4); }
+  ctx.textAlign = 'center';
+  for (var y = 0; y <= years; y += 5) ctx.fillText('Yr ' + y, xS(y), H - pad.b + 20);
+  
+  // Glidepath line
+  ctx.strokeStyle = '#7eb8da'; ctx.lineWidth = 3; ctx.setLineDash([8, 4]);
+  ctx.beginPath();
+  glide.forEach(function(g, i) { if (i === 0) ctx.moveTo(xS(g.year), yS(g.min)); else ctx.lineTo(xS(g.year), yS(g.min)); });
+  ctx.stroke(); ctx.setLineDash([]);
+  
+  // Draw and store paths for failed runs (red) - draw these last so they're on top
+  var failedRuns = runs.filter(function(r){return r.failed;});
+  var successRuns = runs.filter(function(r){return !r.failed;});
+  
+  // Successful runs first (green, thin)
+  successRuns.forEach(function(r, idx) {
+    var pts = r.hist.map(function(h) { return { x: xS(h.year), y: yS(h.total) }; });
+    paths.push({ run: r, pts: pts, failed: false, idx: idx });
+    ctx.strokeStyle = 'rgba(46,160,67,0.25)'; ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    pts.forEach(function(p, i) { if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
+    ctx.stroke();
+  });
+  
+  // Failed runs on top (red, thicker)
+  failedRuns.forEach(function(r, idx) {
+    var pts = r.hist.map(function(h) { return { x: xS(h.year), y: yS(h.total) }; });
+    paths.push({ run: r, pts: pts, failed: true, idx: idx });
+    ctx.strokeStyle = 'rgba(248,81,73,0.8)'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    pts.forEach(function(p, i) { if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
+    ctx.stroke();
+  });
+  
+  // Zero line
+  ctx.strokeStyle = '#f85149'; ctx.lineWidth = 2; ctx.setLineDash([5, 5]);
+  ctx.beginPath(); ctx.moveTo(pad.l, yS(0)); ctx.lineTo(W - pad.r, yS(0)); ctx.stroke(); ctx.setLineDash([]);
+  
+  // Store for mouse handler (including drawing functions for highlight)
+  trajChartParams = {
+    paths: paths, pad: pad, W: W, H: H, years: years, max: max, distToSegment: distToSegment,
+    canvas: c, ctx: ctx, glide: glide,
+    xS: xS, yS: yS, canvasId: canvasId || 'trajChart',
+    analysisData: analysisData || null
+  };
+  
+  // Add mouse handler
+  c.onmousemove = function(e) {
+    var rect = c.getBoundingClientRect();
+    // Scale mouse coordinates to canvas internal coordinates
+    var scaleX = c.width / rect.width;
+    var scaleY = c.height / rect.height;
+    var mx = (e.clientX - rect.left) * scaleX;
+    var my = (e.clientY - rect.top) * scaleY;
+    var tooltip = document.getElementById('chartTooltip');
+    var closest = null, minDist = 12 * scaleX; // Scale threshold too
+
+    // Check failed runs first (priority)
+    trajChartParams.paths.filter(function(p) { return p.failed; }).forEach(function(p) {
+      for (var i = 0; i < p.pts.length - 1; i++) {
+        var d = trajChartParams.distToSegment(mx, my, p.pts[i].x, p.pts[i].y, p.pts[i+1].x, p.pts[i+1].y);
+        if (d < minDist) { minDist = d; closest = p; }
+      }
+    });
+
+    // Then check successful runs if no failed run found
+    if (!closest) {
+      trajChartParams.paths.filter(function(p) { return !p.failed; }).forEach(function(p) {
+        for (var i = 0; i < p.pts.length - 1; i++) {
+          var d = trajChartParams.distToSegment(mx, my, p.pts[i].x, p.pts[i].y, p.pts[i+1].x, p.pts[i+1].y);
+          if (d < minDist) { minDist = d; closest = p; }
+        }
+      });
+    }
+    
+    // Draw highlight if we have a new closest or need to clear
+    var newHighlightIdx = closest ? closest.idx : -1;
+    if (newHighlightIdx !== trajHighlightIdx) {
+      trajHighlightIdx = newHighlightIdx;
+      // Redraw all trajectories
+      var ctx = trajChartParams.ctx;
+      var params = trajChartParams;
+      // Clear the trajectory area (not the whole canvas to preserve axes)
+      ctx.fillStyle = 'rgba(15,15,26,1)';
+      ctx.fillRect(params.pad.l, params.pad.t, params.W - params.pad.l - params.pad.r, params.H - params.pad.t - params.pad.b);
+
+      // Redraw grid
+      ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 1;
+      for (var gi = 0; gi <= 5; gi++) { var gy = params.pad.t + (gi/5) * (params.H - params.pad.t - params.pad.b); ctx.beginPath(); ctx.moveTo(params.pad.l, gy); ctx.lineTo(params.W - params.pad.r, gy); ctx.stroke(); }
+
+      // Redraw glidepath
+      if (params.glide && params.glide.length > 0) {
+        ctx.strokeStyle = '#7eb8da'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 2]);
+        ctx.beginPath();
+        params.glide.forEach(function(g, i) { var gx = params.xS(g.year), gyy = params.yS(g.min); if (i === 0) ctx.moveTo(gx, gyy); else ctx.lineTo(gx, gyy); });
+        ctx.stroke(); ctx.setLineDash([]);
+      }
+
+      // Draw non-highlighted runs first (dimmer when something is highlighted)
+      params.paths.forEach(function(p) {
+        if (closest && p.idx === closest.idx) return; // Skip highlighted one
+        var alpha = closest ? 0.15 : (p.failed ? 0.8 : 0.25);
+        ctx.strokeStyle = p.failed ? 'rgba(248,81,73,' + alpha + ')' : 'rgba(46,160,67,' + alpha + ')';
+        ctx.lineWidth = p.failed ? 2 : 0.5;
+        ctx.beginPath();
+        p.pts.forEach(function(pt, i) { if (i === 0) ctx.moveTo(pt.x, pt.y); else ctx.lineTo(pt.x, pt.y); });
+        ctx.stroke();
+      });
+
+      // Draw highlighted run on top (bright and thick)
+      if (closest) {
+        ctx.strokeStyle = closest.failed ? '#ff6b6b' : '#5fdd7b';
+        ctx.lineWidth = 4;
+        ctx.shadowColor = closest.failed ? '#ff6b6b' : '#5fdd7b';
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        closest.pts.forEach(function(pt, i) { if (i === 0) ctx.moveTo(pt.x, pt.y); else ctx.lineTo(pt.x, pt.y); });
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+      }
+
+      // Redraw zero line
+      ctx.strokeStyle = '#f85149'; ctx.lineWidth = 2; ctx.setLineDash([5, 5]);
+      ctx.beginPath(); ctx.moveTo(params.pad.l, params.yS(0)); ctx.lineTo(params.W - params.pad.r, params.yS(0)); ctx.stroke(); ctx.setLineDash([]);
+    }
+
+    if (closest) {
+      var r = closest.run;
+      var html = '<div style="border-bottom:1px solid #555;padding-bottom:6px;margin-bottom:6px;">';
+      html += '<strong style="color:' + (closest.failed ? '#f85149' : '#2ea043') + ';">' + (closest.failed ? '❌ FAILED' : '✅ SUCCESS') + '</strong>';
+      html += '<span style="float:right;color:#8b8b9b;font-size:11px;">Run #' + (closest.idx + 1) + '</span></div>';
+      html += '<div style="display:grid;grid-template-columns:auto auto;gap:4px 16px;">';
+      if (r.startYear) {
+        html += '<span style="color:#8b8b9b;">Start year:</span><span>' + r.startYear + '</span>';
+      }
+      html += '<span style="color:#8b8b9b;">Duration:</span><span>' + r.years.toFixed(1) + ' years</span>';
+      html += '<span style="color:#8b8b9b;">Final balance:</span><span>£' + (r.final/1e6).toFixed(2) + 'M</span>';
+      html += '<span style="color:#8b8b9b;">Protection months:</span><span>' + r.protMonths + '</span>';
+      html += '<span style="color:#8b8b9b;">Longest streak:</span><span>' + r.maxConsec + ' months</span>';
+      html += '</div>';
+      if (closest.failed) {
+        html += '<div style="margin-top:8px;padding-top:8px;border-top:1px solid #555;color:#f0c674;">💀 Depleted at year ' + (r.failMonth/12).toFixed(1) + '</div>';
+      }
+      tooltip.innerHTML = html;
+      tooltip.style.display = 'block';
+      tooltip.style.left = (e.clientX + 15) + 'px';
+      tooltip.style.top = (e.clientY - 10) + 'px';
+    } else {
+      tooltip.style.display = 'none';
+    }
+  };
+
+  c.onmouseleave = function() {
+    document.getElementById('chartTooltip').style.display = 'none';
+    // Reset highlight and redraw normally
+    if (trajHighlightIdx !== -1) {
+      trajHighlightIdx = -1;
+      var ctx = trajChartParams.ctx;
+      var params = trajChartParams;
+      ctx.fillStyle = 'rgba(15,15,26,1)';
+      ctx.fillRect(params.pad.l, params.pad.t, params.W - params.pad.l - params.pad.r, params.H - params.pad.t - params.pad.b);
+
+      // Redraw grid
+      ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 1;
+      for (var gi = 0; gi <= 5; gi++) { var gy = params.pad.t + (gi/5) * (params.H - params.pad.t - params.pad.b); ctx.beginPath(); ctx.moveTo(params.pad.l, gy); ctx.lineTo(params.W - params.pad.r, gy); ctx.stroke(); }
+
+      // Redraw glidepath
+      if (params.glide && params.glide.length > 0) {
+        ctx.strokeStyle = '#7eb8da'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 2]);
+        ctx.beginPath();
+        params.glide.forEach(function(g, i) { var gx = params.xS(g.year), gyy = params.yS(g.min); if (i === 0) ctx.moveTo(gx, gyy); else ctx.lineTo(gx, gyy); });
+        ctx.stroke(); ctx.setLineDash([]);
+      }
+
+      // Draw all runs normally
+      params.paths.forEach(function(p) {
+        ctx.strokeStyle = p.failed ? 'rgba(248,81,73,0.8)' : 'rgba(46,160,67,0.25)';
+        ctx.lineWidth = p.failed ? 2 : 0.5;
+        ctx.beginPath();
+        p.pts.forEach(function(pt, i) { if (i === 0) ctx.moveTo(pt.x, pt.y); else ctx.lineTo(pt.x, pt.y); });
+        ctx.stroke();
+      });
+
+      // Redraw zero line
+      ctx.strokeStyle = '#f85149'; ctx.lineWidth = 2; ctx.setLineDash([5, 5]);
+      ctx.beginPath(); ctx.moveTo(params.pad.l, params.yS(0)); ctx.lineTo(params.W - params.pad.r, params.yS(0)); ctx.stroke(); ctx.setLineDash([]);
+    }
+  };
+}
+
+
+
+function drawCone(pctData, glide, years, canvasId) {
+  var c = document.getElementById(canvasId || 'coneChart');
+  if (!c) return;
+  var ctx = c.getContext('2d');
+  var W = c.width, H = c.height, pad = { l: 80, r: 40, t: 20, b: 50 };
+  ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.fillRect(0, 0, W, H);
+  
+  var max = Math.max.apply(null, pctData.map(function(d){return d.p90;})) * 1.15;
+  var xS = function(y) { return pad.l + (y / years) * (W - pad.l - pad.r); };
+  var yS = function(v) { return H - pad.b - (v / max) * (H - pad.t - pad.b); };
+  
+  // Grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 1;
+  for (var i = 0; i <= 5; i++) { var y = pad.t + (i/5) * (H - pad.t - pad.b); ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke(); }
+  
+  // 5-95 percentile band (lightest)
+  ctx.fillStyle = 'rgba(240,198,116,0.15)';
+  ctx.beginPath();
+  pctData.forEach(function(d, i) { if (i === 0) ctx.moveTo(xS(d.year), yS(d.p95)); else ctx.lineTo(xS(d.year), yS(d.p95)); });
+  for (var i = pctData.length - 1; i >= 0; i--) ctx.lineTo(xS(pctData[i].year), yS(pctData[i].p5));
+  ctx.closePath(); ctx.fill();
+  
+  // 10-90 percentile band
+  ctx.fillStyle = 'rgba(240,198,116,0.2)';
+  ctx.beginPath();
+  pctData.forEach(function(d, i) { if (i === 0) ctx.moveTo(xS(d.year), yS(d.p90)); else ctx.lineTo(xS(d.year), yS(d.p90)); });
+  for (var i = pctData.length - 1; i >= 0; i--) ctx.lineTo(xS(pctData[i].year), yS(pctData[i].p10));
+  ctx.closePath(); ctx.fill();
+  
+  // 25-75 percentile band (darkest)
+  ctx.fillStyle = 'rgba(240,198,116,0.35)';
+  ctx.beginPath();
+  pctData.forEach(function(d, i) { if (i === 0) ctx.moveTo(xS(d.year), yS(d.p75)); else ctx.lineTo(xS(d.year), yS(d.p75)); });
+  for (var i = pctData.length - 1; i >= 0; i--) ctx.lineTo(xS(pctData[i].year), yS(pctData[i].p25));
+  ctx.closePath(); ctx.fill();
+  
+  // Glidepath minimum line
+  ctx.strokeStyle = '#7eb8da'; ctx.lineWidth = 2; ctx.setLineDash([6, 3]);
+  ctx.beginPath();
+  glide.forEach(function(g, i) { if (i === 0) ctx.moveTo(xS(g.year), yS(g.min)); else ctx.lineTo(xS(g.year), yS(g.min)); });
+  ctx.stroke(); ctx.setLineDash([]);
+  
+  // Median line
+  ctx.strokeStyle = '#f0c674'; ctx.lineWidth = 3;
+  ctx.beginPath();
+  pctData.forEach(function(d, i) { if (i === 0) ctx.moveTo(xS(d.year), yS(d.p50)); else ctx.lineTo(xS(d.year), yS(d.p50)); });
+  ctx.stroke();
+  
+  // 10th percentile line (danger zone)
+  ctx.strokeStyle = 'rgba(248,81,73,0.6)'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 2]);
+  ctx.beginPath();
+  pctData.forEach(function(d, i) { if (i === 0) ctx.moveTo(xS(d.year), yS(d.p10)); else ctx.lineTo(xS(d.year), yS(d.p10)); });
+  ctx.stroke(); ctx.setLineDash([]);
+  
+  // Zero line
+  ctx.strokeStyle = '#f85149'; ctx.lineWidth = 2; ctx.setLineDash([5, 5]);
+  ctx.beginPath(); ctx.moveTo(pad.l, yS(0)); ctx.lineTo(W - pad.r, yS(0)); ctx.stroke(); ctx.setLineDash([]);
+  
+  // Labels
+  ctx.fillStyle = '#8b8b9b'; ctx.font = '11px sans-serif'; ctx.textAlign = 'right';
+  for (var i = 0; i <= 5; i++) ctx.fillText('£' + (max*(1-i/5)/1e6).toFixed(1) + 'M', pad.l - 10, pad.t + (i/5)*(H-pad.t-pad.b) + 4);
+  ctx.textAlign = 'center';
+  for (var y = 0; y <= years; y += 5) ctx.fillText('Yr ' + y, xS(y), H - pad.b + 20);
+}
+
+function drawPct(data, glide) {
+  var c = document.getElementById('pctChart');
+  if (!c) return;
+  var ctx = c.getContext('2d');
+  var W = c.width, H = c.height, pad = { l: 80, r: 40, t: 20, b: 50 };
+  ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.fillRect(0, 0, W, H);
+  
+  var max = Math.max.apply(null, data.map(function(d){return d.p90;})) * 1.1;
+  var years = data.length - 1;
+  var xS = function(y) { return pad.l + (y / years) * (W - pad.l - pad.r); };
+  var yS = function(v) { return H - pad.b - (v / max) * (H - pad.t - pad.b); };
+  
+  ctx.fillStyle = 'rgba(240,198,116,0.2)'; ctx.beginPath();
+  data.forEach(function(d, i) { if (i === 0) ctx.moveTo(xS(d.year), yS(d.p90)); else ctx.lineTo(xS(d.year), yS(d.p90)); });
+  for (var i = data.length - 1; i >= 0; i--) ctx.lineTo(xS(data[i].year), yS(data[i].p10));
+  ctx.closePath(); ctx.fill();
+  
+  ctx.fillStyle = 'rgba(240,198,116,0.3)'; ctx.beginPath();
+  data.forEach(function(d, i) { if (i === 0) ctx.moveTo(xS(d.year), yS(d.p75)); else ctx.lineTo(xS(d.year), yS(d.p75)); });
+  for (var i = data.length - 1; i >= 0; i--) ctx.lineTo(xS(data[i].year), yS(data[i].p25));
+  ctx.closePath(); ctx.fill();
+  
+  ctx.strokeStyle = '#7eb8da'; ctx.lineWidth = 2; ctx.setLineDash([6, 3]);
+  ctx.beginPath();
+  glide.forEach(function(g, i) { if (i === 0) ctx.moveTo(xS(g.year), yS(g.min)); else ctx.lineTo(xS(g.year), yS(g.min)); });
+  ctx.stroke(); ctx.setLineDash([]);
+  
+  ctx.strokeStyle = '#f0c674'; ctx.lineWidth = 3; ctx.beginPath();
+  data.forEach(function(d, i) { if (i === 0) ctx.moveTo(xS(d.year), yS(d.p50)); else ctx.lineTo(xS(d.year), yS(d.p50)); });
+  ctx.stroke();
+  
+  ctx.fillStyle = '#8b8b9b'; ctx.font = '11px sans-serif'; ctx.textAlign = 'right';
+  for (var i = 0; i <= 5; i++) ctx.fillText('£' + (max*(1-i/5)/1e6).toFixed(1) + 'M', pad.l - 10, pad.t + (i/5)*(H-pad.t-pad.b) + 4);
+  ctx.textAlign = 'center';
+  for (var y = 0; y <= years; y += 5) ctx.fillText('Yr ' + y, xS(y), H - pad.b + 20);
+}
+
+function drawProt(arr, canvasId) {
+  var c = document.getElementById(canvasId || 'protChart');
+  if (!c) return;
+  var ctx = c.getContext('2d');
+  var W = c.width, H = c.height, pad = { l: 60, r: 20, t: 30, b: 55 };
+  ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.fillRect(0, 0, W, H);
+  
+  var maxM = Math.max.apply(null, arr);
+  var bSize = Math.max(1, Math.ceil(maxM / 15));
+  var buckets = {};
+  arr.forEach(function(m) { var b = Math.floor(m / bSize) * bSize; buckets[b] = (buckets[b] || 0) + 1; });
+  
+  var keys = Object.keys(buckets).map(Number).sort(function(a,b){return a-b;});
+  var maxC = Math.max.apply(null, Object.values(buckets));
+  var barW = (W - pad.l - pad.r) / (keys.length || 1);
+  
+  // Store bar positions for hover
+  var bars = [];
+  
+  // Y-axis grid and labels
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 1;
+  ctx.fillStyle = '#8b8b9b'; ctx.font = '10px sans-serif'; ctx.textAlign = 'right';
+  for (var i = 0; i <= 4; i++) {
+    var y = pad.t + (i/4) * (H - pad.t - pad.b);
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+    var val = Math.round(maxC * (1 - i/4));
+    ctx.fillText(val + ' runs', pad.l - 5, y + 4);
+  }
+  
+  // Draw bars
+  keys.forEach(function(b, i) {
+    var cnt = buckets[b];
+    var barH = (cnt / maxC) * (H - pad.t - pad.b);
+    var x = pad.l + i * barW + 2;
+    var y = H - pad.b - barH;
+    var w = barW - 4;
+    
+    ctx.fillStyle = b === 0 ? '#2ea043' : '#e1b12c';
+    ctx.fillRect(x, y, w, barH);
+    
+    bars.push({ x: x, y: y, w: w, h: barH, months: b, count: cnt, pct: (cnt / arr.length * 100).toFixed(1) });
+  });
+  
+  // X-axis labels
+  ctx.fillStyle = '#8b8b9b'; ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
+  keys.forEach(function(b, i) { 
+    if (i % 2 === 0 || keys.length < 12) {
+      ctx.fillText(b + (bSize > 1 ? '-' + (b + bSize - 1) : ''), pad.l + i * barW + barW/2, H - pad.b + 15); 
+    }
+  });
+  ctx.fillText('Protection Months', W / 2, H - 5);
+  
+  // Y-axis title
+  ctx.save();
+  ctx.translate(12, H/2);
+  ctx.rotate(-Math.PI/2);
+  ctx.textAlign = 'center';
+  ctx.fillText('Number of Runs', 0, 0);
+  ctx.restore();
+  
+  // Store for mouse handler
+  protChartParams = { bars: bars, total: arr.length };
+  
+  // Add mouse handler
+  c.onmousemove = function(e) {
+    var rect = c.getBoundingClientRect();
+    // Scale mouse coordinates to canvas internal coordinates
+    var scaleX = c.width / rect.width;
+    var scaleY = c.height / rect.height;
+    var mx = (e.clientX - rect.left) * scaleX;
+    var my = (e.clientY - rect.top) * scaleY;
+    var tooltip = document.getElementById('chartTooltip');
+    var hit = null;
+
+    protChartParams.bars.forEach(function(bar) {
+      if (mx >= bar.x && mx <= bar.x + bar.w && my >= bar.y && my <= bar.y + bar.h) {
+        hit = bar;
+      }
+    });
+    
+    if (hit) {
+      var html = '<div style="border-bottom:1px solid #555;padding-bottom:6px;margin-bottom:6px;">';
+      html += '<strong style="color:' + (hit.months === 0 ? '#2ea043' : '#e1b12c') + ';">';
+      html += hit.months === 0 ? '🟢 No Protection' : '🟡 ' + hit.months + ' months';
+      html += '</strong></div>';
+      html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;">';
+      html += '<span style="color:#8b8b9b;">Runs:</span><span>' + hit.count + ' of ' + protChartParams.total + '</span>';
+      html += '<span style="color:#8b8b9b;">Percentage:</span><span>' + hit.pct + '%</span>';
+      html += '</div>';
+      tooltip.innerHTML = html;
+      tooltip.style.display = 'block';
+      tooltip.style.left = (e.clientX + 15) + 'px';
+      tooltip.style.top = (e.clientY + 15) + 'px';
+    } else {
+      tooltip.style.display = 'none';
+    }
+  };
+  
+  c.onmouseleave = function() {
+    document.getElementById('chartTooltip').style.display = 'none';
+  };
+}
+
+// Store historical results globally for chart interaction
+var histResultsData = null;
+
+function runHistorical() {
+  var cfg = { pacwStart: +document.getElementById('histPACW').value, cgtStart: +document.getElementById('histCGT').value, csh2Start: +document.getElementById('histCSH2').value, years: +document.getElementById('histYears').value };
+  var yrs = Object.keys(EQUITY_RETURNS).map(Number).sort(function(a,b){return a-b;});
+  var maxY = Math.max.apply(null, yrs);
+  var results = [];
+
+  yrs.forEach(function(sy) {
+    if (sy + cfg.years - 1 > maxY) return;
+    var ret = { equity: {}, inflation: {} };
+    for (var y = 0; y < cfg.years; y++) { ret.equity[y] = EQUITY_RETURNS[sy + y] || 0; ret.inflation[y] = INFLATION[sy + y] || 0.025; }
+    var res = simulate(cfg, ret, sy);
+    res.startYear = sy;
+    // Add analysis for failed runs
+    var analysis = analyzeFailure(res, ret, cfg, sy);
+    results.push({ start: sy, res: res, returns: ret, analysis: analysis });
+  });
+
+  histResultsData = { results: results, cfg: cfg };
+
+  var fails = results.filter(function(r){return r.res.failed;});
+  var rate = ((results.length - fails.length) / results.length * 100).toFixed(1);
+  var worst = results.slice().sort(function(a,b){return a.res.years - b.res.years;}).slice(0, 5);
+
+  // Calculate percentile data for cone chart
+  var pctData = [];
+  for (var year = 0; year <= cfg.years; year++) {
+    var totals = results.map(function(r) {
+      var h = r.res.hist.find(function(hh) { return hh.year === year; });
+      return h ? h.total : 0;
+    }).sort(function(a,b) { return a - b; });
+    var n = totals.length;
+    pctData.push({
+      year: year,
+      p5: totals[Math.floor(n * 0.05)] || 0,
+      p10: totals[Math.floor(n * 0.10)] || 0,
+      p25: totals[Math.floor(n * 0.25)] || 0,
+      p50: totals[Math.floor(n * 0.50)] || 0,
+      p75: totals[Math.floor(n * 0.75)] || 0,
+      p90: totals[Math.floor(n * 0.90)] || 0,
+      p95: totals[Math.floor(n * 0.95)] || 0
+    });
+  }
+
+  // Build glidepath
+  var s = getStressDB().settings;
+  var glide = [];
+  for (var y = 0; y <= cfg.years; y++) {
+    var cumInf = Math.pow(1.025, y);
+    glide.push({ year: y, min: calcGlidepath(s.pacwMin, y, s.duration, cumInf, true) + calcGlidepath(s.cgtMin, y, s.duration, cumInf, true) });
+  }
+
+  // Protection array
+  var protArr = results.map(function(r) { return r.res.protMonths; });
+
+  // HODL statistics
+  var hodlEnabled = s.hodlEnabled;
+  var runsUsingHodl = results.filter(function(r) { return r.res.hodlUsed > 0; }).length;
+  var savedByHodl = results.filter(function(r) { return r.res.hodlUsed > 0 && !r.res.failed; }).length;
+
+  // Calculate buffers
+  var totalStart = cfg.pacwStart + cfg.cgtStart + cfg.csh2Start;
+  var totalMin = s.pacwMin + s.cgtMin + s.csh2Target;
+  var buffer = totalStart - totalMin;
+  var bufferPct = totalMin > 0 ? Math.round((buffer / totalMin) * 100) : 0;
+
+  // Build HTML
+  var h = '';
+
+  // Show info about starting values vs settings
+  if (buffer !== 0) {
+    var bufferClass = buffer > 0 ? 'info-box' : 'warning-box';
+    var bufferIcon = buffer > 0 ? 'ℹ️' : '⚠️';
+    h += '<div class="' + bufferClass + '" style="margin-bottom:20px;">';
+    h += '<strong>' + bufferIcon + ' Starting Values vs Settings:</strong><br>';
+    h += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:10px 0;">';
+    h += '<div><strong>Starting:</strong> £' + totalStart.toLocaleString() + '<br><span style="font-size:11px;color:var(--text-muted);">PACW: £' + cfg.pacwStart.toLocaleString() + ' | CGT: £' + cfg.cgtStart.toLocaleString() + ' | CSH2: £' + cfg.csh2Start.toLocaleString() + '</span></div>';
+    h += '<div><strong>Minimums (Settings):</strong> £' + totalMin.toLocaleString() + '<br><span style="font-size:11px;color:var(--text-muted);">PACW: £' + s.pacwMin.toLocaleString() + ' | CGT: £' + s.cgtMin.toLocaleString() + ' | CSH2: £' + s.csh2Target.toLocaleString() + '</span></div>';
+    h += '<div><strong>Buffer:</strong> ' + (buffer >= 0 ? '+' : '') + '£' + buffer.toLocaleString() + ' (' + (buffer >= 0 ? '+' : '') + bufferPct + '%)<br><span style="font-size:11px;color:var(--text-muted);">Cushion above glidepath floor</span></div>';
+    h += '</div>';
+    if (buffer > totalMin * 0.5) {
+      h += '<span style="font-size:12px;">Large buffer provides significant protection against market downturns.</span>';
+    } else if (buffer < 0) {
+      h += '<span style="font-size:12px;color:var(--warning);">Starting below minimums - protection mode will activate immediately.</span>';
+    }
+    h += '</div>';
+  }
+
+  h += '<div class="grid grid-3" style="margin-bottom:20px;">';
+  h += '<div class="stat-box ' + (rate >= 90 ? 'success' : 'warning') + '"><div class="stat-value">' + rate + '%</div><div class="stat-label">Success</div></div>';
+  h += '<div class="stat-box"><div class="stat-value">' + results.length + '</div><div class="stat-label">Sequences</div></div>';
+  h += '<div class="stat-box danger"><div class="stat-value">' + fails.length + '</div><div class="stat-label">Failures</div></div>';
+  h += '</div>';
+
+  // HODL stats row (only if enabled and used)
+  if (hodlEnabled && runsUsingHodl > 0) {
+    h += '<div class="grid grid-2" style="margin-bottom:20px;">';
+    h += '<div class="stat-box" style="border-color:#f0c674;"><div class="stat-value">' + runsUsingHodl + '</div><div class="stat-label">Periods Using HODL</div></div>';
+    h += '<div class="stat-box ' + (savedByHodl > 0 ? 'success' : '') + '"><div class="stat-value">' + savedByHodl + '</div><div class="stat-label">Saved by HODL</div></div>';
+    h += '</div>';
+  }
+
+  // Charts
+  h += '<div class="chart-container"><div class="chart-title">Historical Sequences - Cone of Uncertainty</div><canvas id="histConeChart" width="1100" height="400"></canvas>';
+  h += '<div class="legend"><span class="legend-item"><span class="legend-color" style="background:rgba(240,198,116,0.35);"></span>25-75%</span>';
+  h += '<span class="legend-item"><span class="legend-color" style="background:rgba(240,198,116,0.2);"></span>10-90%</span>';
+  h += '<span class="legend-item"><span class="legend-color" style="background:rgba(240,198,116,0.15);"></span>5-95%</span>';
+  h += '<span class="legend-item"><span class="legend-color" style="background:#f0c674;width:20px;height:3px;"></span>Median</span>';
+  h += '<span class="legend-item"><span class="legend-color" style="background:#7eb8da;width:20px;height:2px;border-style:dashed;"></span>Glidepath</span></div></div>';
+
+  h += '<div class="chart-container"><div class="chart-title">All Historical Trajectories (hover for details)</div><canvas id="histTrajChart" width="1100" height="350"></canvas>';
+  h += '<div class="legend"><span class="legend-item"><span class="legend-color" style="background:#2ea043;"></span>Success</span>';
+  h += '<span class="legend-item"><span class="legend-color" style="background:#f85149;"></span>Failed</span></div></div>';
+
+  h += '<div class="chart-container"><div class="chart-title">Protection Distribution</div><canvas id="histProtChart" width="500" height="300"></canvas></div>';
+
+  h += '<h3 style="color:#f0c674;margin-top:30px;">Worst Periods (hover chart for detailed analysis)</h3>';
+  h += '<div class="scenario-row header"><div>Start</div><div>Survival</div><div>Protection</div><div>Status</div></div>';
+  worst.forEach(function(w) {
+    var eventStr = w.analysis.events.length > 0 ? ' (' + w.analysis.events[0].event + ')' : '';
+    h += '<div class="scenario-row ' + (w.res.failed ? 'failed' : '') + '"><div><strong>' + w.start + '</strong>' + eventStr + '</div><div>' + w.res.years.toFixed(1) + ' yrs</div><div>' + w.res.protMonths + ' mo</div><div>' + (w.res.failed ? '❌' : '✅') + '</div></div>';
+  });
+
+  document.getElementById('histResults').innerHTML = h;
+
+  // Draw charts
+  drawCone(pctData, glide, cfg.years, 'histConeChart');
+  drawHistTraj(results, cfg.years, cfg.pacwStart + cfg.cgtStart + cfg.csh2Start, glide);
+  drawProt(protArr, 'histProtChart');
+}
+
+// Special trajectory chart for historical with enhanced tooltips
+function drawHistTraj(results, years, start, glide) {
+  var c = document.getElementById('histTrajChart');
+  if (!c) return;
+  var ctx = c.getContext('2d');
+  var W = c.width, H = c.height, pad = { l: 80, r: 40, t: 20, b: 50 };
+  ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.fillRect(0, 0, W, H);
+
+  var runs = results.map(function(r) { return r.res; });
+
+  // Scale
+  var allTotals = [];
+  runs.forEach(function(r) { r.hist.forEach(function(h) { allTotals.push(h.total); }); });
+  allTotals.sort(function(a,b) { return a - b; });
+  var max = allTotals[Math.floor(allTotals.length * 0.95)] * 1.2;
+  max = Math.max(max, start * 1.5);
+
+  var xS = function(y) { return pad.l + (y / years) * (W - pad.l - pad.r); };
+  var yS = function(v) { return H - pad.b - (Math.min(v, max) / max) * (H - pad.t - pad.b); };
+
+  function distToSegment(px, py, x1, y1, x2, y2) {
+    var dx = x2 - x1, dy = y2 - y1;
+    var len2 = dx * dx + dy * dy;
+    if (len2 === 0) return Math.sqrt((px - x1) * (px - x1) + (py - y1) * (py - y1));
+    var t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / len2));
+    var projX = x1 + t * dx, projY = y1 + t * dy;
+    return Math.sqrt((px - projX) * (px - projX) + (py - projY) * (py - projY));
+  }
+
+  var paths = [];
+
+  // Grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 1;
+  for (var i = 0; i <= 5; i++) { var y = pad.t + (i/5) * (H - pad.t - pad.b); ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke(); }
+
+  // Glidepath
+  if (glide && glide.length > 0) {
+    ctx.strokeStyle = '#7eb8da'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 2]);
+    ctx.beginPath();
+    glide.forEach(function(g, i) { if (i === 0) ctx.moveTo(xS(g.year), yS(g.min)); else ctx.lineTo(xS(g.year), yS(g.min)); });
+    ctx.stroke(); ctx.setLineDash([]);
+  }
+
+  // Draw trajectories
+  var successRuns = results.filter(function(r) { return !r.res.failed; });
+  var failedRuns = results.filter(function(r) { return r.res.failed; });
+
+  successRuns.forEach(function(r, idx) {
+    var pts = r.res.hist.map(function(h) { return { x: xS(h.year), y: yS(h.total) }; });
+    paths.push({ result: r, pts: pts, failed: false, idx: idx });
+    ctx.strokeStyle = 'rgba(46,160,67,0.25)'; ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    pts.forEach(function(p, i) { if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
+    ctx.stroke();
+  });
+
+  failedRuns.forEach(function(r, idx) {
+    var pts = r.res.hist.map(function(h) { return { x: xS(h.year), y: yS(h.total) }; });
+    paths.push({ result: r, pts: pts, failed: true, idx: successRuns.length + idx });
+    ctx.strokeStyle = 'rgba(248,81,73,0.8)'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    pts.forEach(function(p, i) { if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
+    ctx.stroke();
+  });
+
+  // Zero line
+  ctx.strokeStyle = '#f85149'; ctx.lineWidth = 2; ctx.setLineDash([5, 5]);
+  ctx.beginPath(); ctx.moveTo(pad.l, yS(0)); ctx.lineTo(W - pad.r, yS(0)); ctx.stroke(); ctx.setLineDash([]);
+
+  // Y-axis labels
+  ctx.fillStyle = '#8b8b9b'; ctx.font = '11px sans-serif'; ctx.textAlign = 'right';
+  for (var i = 0; i <= 5; i++) ctx.fillText('£' + (max*(1-i/5)/1e6).toFixed(1) + 'M', pad.l - 10, pad.t + (i/5)*(H-pad.t-pad.b) + 4);
+  ctx.textAlign = 'center';
+  for (var y = 0; y <= years; y += 5) ctx.fillText('Yr ' + y, xS(y), H - pad.b + 20);
+
+  // Store for mouse handler
+  var histTrajParams = { paths: paths, pad: pad, W: W, H: H, years: years, max: max, distToSegment: distToSegment, ctx: ctx, glide: glide, xS: xS, yS: yS };
+  var histHighlightIdx = -1;
+
+  c.onmousemove = function(e) {
+    var rect = c.getBoundingClientRect();
+    var scaleX = c.width / rect.width;
+    var scaleY = c.height / rect.height;
+    var mx = (e.clientX - rect.left) * scaleX;
+    var my = (e.clientY - rect.top) * scaleY;
+    var tooltip = document.getElementById('chartTooltip');
+    var closest = null, minDist = 12 * scaleX;
+
+    histTrajParams.paths.filter(function(p) { return p.failed; }).forEach(function(p) {
+      for (var i = 0; i < p.pts.length - 1; i++) {
+        var d = histTrajParams.distToSegment(mx, my, p.pts[i].x, p.pts[i].y, p.pts[i+1].x, p.pts[i+1].y);
+        if (d < minDist) { minDist = d; closest = p; }
+      }
+    });
+
+    if (!closest) {
+      histTrajParams.paths.filter(function(p) { return !p.failed; }).forEach(function(p) {
+        for (var i = 0; i < p.pts.length - 1; i++) {
+          var d = histTrajParams.distToSegment(mx, my, p.pts[i].x, p.pts[i].y, p.pts[i+1].x, p.pts[i+1].y);
+          if (d < minDist) { minDist = d; closest = p; }
+        }
+      });
+    }
+
+    // Redraw highlight
+    var newIdx = closest ? closest.idx : -1;
+    if (newIdx !== histHighlightIdx) {
+      histHighlightIdx = newIdx;
+      ctx.fillStyle = 'rgba(15,15,26,1)';
+      ctx.fillRect(pad.l, pad.t, W - pad.l - pad.r, H - pad.t - pad.b);
+
+      ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 1;
+      for (var gi = 0; gi <= 5; gi++) { var gy = pad.t + (gi/5) * (H - pad.t - pad.b); ctx.beginPath(); ctx.moveTo(pad.l, gy); ctx.lineTo(W - pad.r, gy); ctx.stroke(); }
+
+      if (glide && glide.length > 0) {
+        ctx.strokeStyle = '#7eb8da'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 2]);
+        ctx.beginPath();
+        glide.forEach(function(g, i) { var gx = xS(g.year), gyy = yS(g.min); if (i === 0) ctx.moveTo(gx, gyy); else ctx.lineTo(gx, gyy); });
+        ctx.stroke(); ctx.setLineDash([]);
+      }
+
+      histTrajParams.paths.forEach(function(p) {
+        if (closest && p.idx === closest.idx) return;
+        var alpha = closest ? 0.15 : (p.failed ? 0.8 : 0.25);
+        ctx.strokeStyle = p.failed ? 'rgba(248,81,73,' + alpha + ')' : 'rgba(46,160,67,' + alpha + ')';
+        ctx.lineWidth = p.failed ? 2 : 0.5;
+        ctx.beginPath();
+        p.pts.forEach(function(pt, i) { if (i === 0) ctx.moveTo(pt.x, pt.y); else ctx.lineTo(pt.x, pt.y); });
+        ctx.stroke();
+      });
+
+      if (closest) {
+        ctx.strokeStyle = closest.failed ? '#ff6b6b' : '#5fdd7b';
+        ctx.lineWidth = 4;
+        ctx.shadowColor = closest.failed ? '#ff6b6b' : '#5fdd7b';
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        closest.pts.forEach(function(pt, i) { if (i === 0) ctx.moveTo(pt.x, pt.y); else ctx.lineTo(pt.x, pt.y); });
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+      }
+
+      ctx.strokeStyle = '#f85149'; ctx.lineWidth = 2; ctx.setLineDash([5, 5]);
+      ctx.beginPath(); ctx.moveTo(pad.l, yS(0)); ctx.lineTo(W - pad.r, yS(0)); ctx.stroke(); ctx.setLineDash([]);
+    }
+
+    if (closest) {
+      var r = closest.result;
+      var res = r.res;
+      var analysis = r.analysis;
+
+      var html = '<div style="border-bottom:1px solid #555;padding-bottom:6px;margin-bottom:6px;">';
+      html += '<strong style="color:' + (closest.failed ? '#f85149' : '#2ea043') + ';">' + (closest.failed ? '❌ FAILED' : '✅ SUCCESS') + '</strong>';
+      html += '<span style="float:right;color:#8b8b9b;font-size:11px;">Started ' + r.start + '</span></div>';
+
+      html += '<div style="display:grid;grid-template-columns:auto auto;gap:4px 16px;margin-bottom:8px;">';
+      html += '<span style="color:#8b8b9b;">Duration:</span><span>' + res.years.toFixed(1) + ' years</span>';
+      html += '<span style="color:#8b8b9b;">Final balance:</span><span>£' + (res.final/1e6).toFixed(2) + 'M</span>';
+      html += '<span style="color:#8b8b9b;">Protection:</span><span>' + res.protMonths + ' months</span>';
+      html += '</div>';
+
+      // Critical period
+      if (analysis.criticalPeriod) {
+        html += '<div style="border-top:1px solid #555;padding-top:8px;margin-top:4px;">';
+        html += '<div style="color:#f0c674;font-weight:bold;margin-bottom:4px;">📉 Critical Period</div>';
+        html += '<div style="font-size:12px;">' + analysis.criticalPeriod.actualStartYear + '-' + analysis.criticalPeriod.actualEndYear + '</div>';
+        if (analysis.events.length > 0) {
+          html += '<div style="font-size:11px;color:#8b8b9b;font-style:italic;">' + analysis.events.map(function(e) { return e.event; }).join(', ') + '</div>';
+        }
+        html += '<div style="font-size:12px;">Equity loss: ' + (analysis.criticalPeriod.equityLoss * 100).toFixed(0) + '%</div>';
+        html += '</div>';
+      }
+
+      // Fund analysis
+      if (analysis.worstFund) {
+        html += '<div style="border-top:1px solid #555;padding-top:8px;margin-top:8px;">';
+        html += '<div style="color:#7eb8da;font-weight:bold;margin-bottom:4px;">🔍 Analysis</div>';
+        html += '<div style="font-size:12px;">Most affected: <strong>' + analysis.worstFund + '</strong> (' + (analysis.fundAnalysis[analysis.worstFund.toLowerCase() + 'Drop'] * 100).toFixed(0) + '%)</div>';
+        html += '</div>';
+      }
+
+      // Recommendations
+      if (analysis.recommendations.length > 0) {
+        html += '<div style="border-top:1px solid #555;padding-top:8px;margin-top:8px;">';
+        html += '<div style="color:#2ea043;font-weight:bold;margin-bottom:4px;">💡 Recommendations</div>';
+        analysis.recommendations.forEach(function(rec) {
+          html += '<div style="font-size:12px;">• ' + rec.text + '</div>';
+        });
+        html += '</div>';
+      }
+
+      tooltip.innerHTML = html;
+      tooltip.style.display = 'block';
+      tooltip.style.left = (e.clientX + 15) + 'px';
+      tooltip.style.top = (e.clientY - 10) + 'px';
+      tooltip.style.maxWidth = '320px';
+    } else {
+      tooltip.style.display = 'none';
+    }
+  };
+
+  c.onmouseleave = function() {
+    document.getElementById('chartTooltip').style.display = 'none';
+    if (histHighlightIdx !== -1) {
+      histHighlightIdx = -1;
+      ctx.fillStyle = 'rgba(15,15,26,1)';
+      ctx.fillRect(pad.l, pad.t, W - pad.l - pad.r, H - pad.t - pad.b);
+
+      ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 1;
+      for (var gi = 0; gi <= 5; gi++) { var gy = pad.t + (gi/5) * (H - pad.t - pad.b); ctx.beginPath(); ctx.moveTo(pad.l, gy); ctx.lineTo(W - pad.r, gy); ctx.stroke(); }
+
+      if (glide && glide.length > 0) {
+        ctx.strokeStyle = '#7eb8da'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 2]);
+        ctx.beginPath();
+        glide.forEach(function(g, i) { var gx = xS(g.year), gyy = yS(g.min); if (i === 0) ctx.moveTo(gx, gyy); else ctx.lineTo(gx, gyy); });
+        ctx.stroke(); ctx.setLineDash([]);
+      }
+
+      histTrajParams.paths.forEach(function(p) {
+        ctx.strokeStyle = p.failed ? 'rgba(248,81,73,0.8)' : 'rgba(46,160,67,0.25)';
+        ctx.lineWidth = p.failed ? 2 : 0.5;
+        ctx.beginPath();
+        p.pts.forEach(function(pt, i) { if (i === 0) ctx.moveTo(pt.x, pt.y); else ctx.lineTo(pt.x, pt.y); });
+        ctx.stroke();
+      });
+
+      ctx.strokeStyle = '#f85149'; ctx.lineWidth = 2; ctx.setLineDash([5, 5]);
+      ctx.beginPath(); ctx.moveTo(pad.l, yS(0)); ctx.lineTo(W - pad.r, yS(0)); ctx.stroke(); ctx.setLineDash([]);
+    }
+  };
+}
+
+function runScenarios() {
+  var cfg = { pacwStart: +document.getElementById('scenPACW').value, cgtStart: +document.getElementById('scenCGT').value, csh2Start: +document.getElementById('scenCSH2').value, years: 35 };
+  var scen = [
+    { name: 'Great Depression', eq: [-0.17,-0.34,-0.53,-0.23,0.67,0.04,0.39,0.25,-0.38,0.28], inf: [0,-0.06,-0.09,-0.10,0.01,0.02,0.03,0.01,0.03,-0.02], color: '#e74c3c' },
+    { name: 'Stagflation 70s', eq: [-0.17,-0.28,0.38,0.18,-0.13,-0.03,0.04,0.15,-0.09,0.20], inf: [0.09,0.12,0.07,0.05,0.07,0.09,0.13,0.13,0.09,0.04], color: '#e67e22' },
+    { name: 'Lost Decade 2000s', eq: [-0.06,-0.07,-0.17,0.25,0.03,-0.01,0.16,0.06,-0.34,0.19], inf: [0.03,0.02,0.02,0.02,0.03,0.03,0.03,0.04,0,0.03], color: '#9b59b6' },
+    { name: '2008 Crisis', eq: [-0.34,0.19,0.11,0.06,0.07,0.27,0.08,-0.02,0.13,0.25], inf: [0,0.03,0.02,0.03,0.02,0.02,0.01,0.01,0.02,0.02], color: '#3498db' },
+    { name: 'Synthetic Worst', eq: [-0.40,0.10,0.10,0.10,-0.35,0.10,0.10,0.10,0.10,-0.30], inf: [0.08,0.05,0.05,0.05,0.08,0.05,0.05,0.05,0.05,0.08], color: '#1abc9c' }
+  ];
+
+  var results = scen.map(function(sc) {
+    var ret = { equity: {}, inflation: {} };
+    for (var y = 0; y < cfg.years; y++) { ret.equity[y] = sc.eq[y % sc.eq.length]; ret.inflation[y] = sc.inf[y % sc.inf.length]; }
+    var res = simulate(cfg, ret, 999);
+    var analysis = analyzeFailure(res, ret, cfg, null);
+    return { name: sc.name, res: res, color: sc.color, returns: ret, analysis: analysis };
+  });
+
+  // Build glidepath
+  var s = getStressDB().settings;
+  var glide = [];
+  for (var y = 0; y <= cfg.years; y++) {
+    var cumInf = Math.pow(1.025, y);
+    glide.push({ year: y, min: calcGlidepath(s.pacwMin, y, s.duration, cumInf, true) + calcGlidepath(s.cgtMin, y, s.duration, cumInf, true) });
+  }
+
+  // Build HTML with chart
+  var h = '<div class="chart-container"><div class="chart-title">Scenario Trajectories (hover for details)</div><canvas id="scenTrajChart" width="1100" height="400"></canvas>';
+  h += '<div class="legend">';
+  results.forEach(function(r) {
+    h += '<span class="legend-item"><span class="legend-color" style="background:' + r.color + ';"></span>' + r.name + '</span>';
+  });
+  h += '</div></div>';
+
+  h += '<h3 style="color:#f0c674;margin-top:20px;">Scenario Results</h3>';
+  h += results.map(function(r) {
+    var hodlInfo = r.res.hodlUsed > 0 ? ' | HODL used: £' + Math.round(r.res.hodlUsed).toLocaleString() : '';
+    return '<div class="card" style="margin-bottom:12px;background:' + (r.res.failed ? 'rgba(248,81,73,0.1)' : 'rgba(46,160,67,0.1)') + ';border-left:4px solid ' + r.color + ';">' +
+      '<div style="display:flex;justify-content:space-between;"><div><strong>' + r.name + '</strong><div style="font-size:12px;color:#8b8b9b;">Protection: ' + r.res.protMonths + ' mo | Max streak: ' + r.res.maxConsec + ' mo' + hodlInfo + '</div></div>' +
+      '<div style="text-align:right;"><div style="font-size:24px;color:' + (r.res.failed ? '#f85149' : '#2ea043') + ';">' + r.res.years.toFixed(1) + ' yrs</div><div style="font-size:11px;">' + (r.res.failed ? 'FAILED' : (r.res.hodlUsed > 0 ? 'SAVED BY HODL' : 'OK')) + '</div></div></div></div>';
+  }).join('');
+
+  document.getElementById('scenResults').innerHTML = h;
+
+  // Draw scenario trajectory chart
+  drawScenTraj(results, cfg.years, cfg.pacwStart + cfg.cgtStart + cfg.csh2Start, glide);
+}
+
+function drawScenTraj(results, years, start, glide) {
+  var c = document.getElementById('scenTrajChart');
+  if (!c) return;
+  var ctx = c.getContext('2d');
+  var W = c.width, H = c.height, pad = { l: 80, r: 40, t: 20, b: 50 };
+  ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.fillRect(0, 0, W, H);
+
+  // Scale
+  var allTotals = [];
+  results.forEach(function(r) { r.res.hist.forEach(function(h) { allTotals.push(h.total); }); });
+  allTotals.sort(function(a,b) { return a - b; });
+  var max = allTotals[Math.floor(allTotals.length * 0.95)] * 1.2;
+  max = Math.max(max, start * 1.5);
+
+  var xS = function(y) { return pad.l + (y / years) * (W - pad.l - pad.r); };
+  var yS = function(v) { return H - pad.b - (Math.min(v, max) / max) * (H - pad.t - pad.b); };
+
+  function distToSegment(px, py, x1, y1, x2, y2) {
+    var dx = x2 - x1, dy = y2 - y1;
+    var len2 = dx * dx + dy * dy;
+    if (len2 === 0) return Math.sqrt((px - x1) * (px - x1) + (py - y1) * (py - y1));
+    var t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / len2));
+    var projX = x1 + t * dx, projY = y1 + t * dy;
+    return Math.sqrt((px - projX) * (px - projX) + (py - projY) * (py - projY));
+  }
+
+  var paths = [];
+
+  // Grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 1;
+  for (var i = 0; i <= 5; i++) { var y = pad.t + (i/5) * (H - pad.t - pad.b); ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke(); }
+
+  // Glidepath
+  if (glide && glide.length > 0) {
+    ctx.strokeStyle = '#7eb8da'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 2]);
+    ctx.beginPath();
+    glide.forEach(function(g, i) { if (i === 0) ctx.moveTo(xS(g.year), yS(g.min)); else ctx.lineTo(xS(g.year), yS(g.min)); });
+    ctx.stroke(); ctx.setLineDash([]);
+  }
+
+  // Draw scenarios
+  results.forEach(function(r, idx) {
+    var pts = r.res.hist.map(function(h) { return { x: xS(h.year), y: yS(h.total) }; });
+    paths.push({ result: r, pts: pts, idx: idx, color: r.color });
+    ctx.strokeStyle = r.color; ctx.lineWidth = 3;
+    ctx.beginPath();
+    pts.forEach(function(p, i) { if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
+    ctx.stroke();
+
+    // Add marker at end
+    var lastPt = pts[pts.length - 1];
+    ctx.fillStyle = r.color;
+    ctx.beginPath();
+    ctx.arc(lastPt.x, lastPt.y, 5, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // Zero line
+  ctx.strokeStyle = '#f85149'; ctx.lineWidth = 2; ctx.setLineDash([5, 5]);
+  ctx.beginPath(); ctx.moveTo(pad.l, yS(0)); ctx.lineTo(W - pad.r, yS(0)); ctx.stroke(); ctx.setLineDash([]);
+
+  // Y-axis labels
+  ctx.fillStyle = '#8b8b9b'; ctx.font = '11px sans-serif'; ctx.textAlign = 'right';
+  for (var i = 0; i <= 5; i++) ctx.fillText('£' + (max*(1-i/5)/1e6).toFixed(1) + 'M', pad.l - 10, pad.t + (i/5)*(H-pad.t-pad.b) + 4);
+  ctx.textAlign = 'center';
+  for (var y = 0; y <= years; y += 5) ctx.fillText('Yr ' + y, xS(y), H - pad.b + 20);
+
+  // Mouse handler
+  var scenTrajParams = { paths: paths, distToSegment: distToSegment, ctx: ctx, pad: pad, W: W, H: H, glide: glide, xS: xS, yS: yS };
+  var scenHighlightIdx = -1;
+
+  c.onmousemove = function(e) {
+    var rect = c.getBoundingClientRect();
+    var scaleX = c.width / rect.width;
+    var scaleY = c.height / rect.height;
+    var mx = (e.clientX - rect.left) * scaleX;
+    var my = (e.clientY - rect.top) * scaleY;
+    var tooltip = document.getElementById('chartTooltip');
+    var closest = null, minDist = 15 * scaleX;
+
+    scenTrajParams.paths.forEach(function(p) {
+      for (var i = 0; i < p.pts.length - 1; i++) {
+        var d = scenTrajParams.distToSegment(mx, my, p.pts[i].x, p.pts[i].y, p.pts[i+1].x, p.pts[i+1].y);
+        if (d < minDist) { minDist = d; closest = p; }
+      }
+    });
+
+    // Redraw with highlight
+    var newIdx = closest ? closest.idx : -1;
+    if (newIdx !== scenHighlightIdx) {
+      scenHighlightIdx = newIdx;
+      ctx.fillStyle = 'rgba(15,15,26,1)';
+      ctx.fillRect(pad.l, pad.t, W - pad.l - pad.r, H - pad.t - pad.b);
+
+      ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 1;
+      for (var gi = 0; gi <= 5; gi++) { var gy = pad.t + (gi/5) * (H - pad.t - pad.b); ctx.beginPath(); ctx.moveTo(pad.l, gy); ctx.lineTo(W - pad.r, gy); ctx.stroke(); }
+
+      if (glide && glide.length > 0) {
+        ctx.strokeStyle = '#7eb8da'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 2]);
+        ctx.beginPath();
+        glide.forEach(function(g, i) { var gx = xS(g.year), gyy = yS(g.min); if (i === 0) ctx.moveTo(gx, gyy); else ctx.lineTo(gx, gyy); });
+        ctx.stroke(); ctx.setLineDash([]);
+      }
+
+      scenTrajParams.paths.forEach(function(p) {
+        var alpha = closest && p.idx !== closest.idx ? 0.3 : 1;
+        var lw = closest && p.idx === closest.idx ? 5 : 3;
+        ctx.strokeStyle = p.color.replace(')', ',' + alpha + ')').replace('rgb', 'rgba').replace('#', '');
+        // Handle hex colors
+        if (p.color.startsWith('#')) {
+          var hex = p.color.slice(1);
+          var r = parseInt(hex.substr(0,2), 16);
+          var g = parseInt(hex.substr(2,2), 16);
+          var b = parseInt(hex.substr(4,2), 16);
+          ctx.strokeStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+        }
+        ctx.lineWidth = lw;
+        if (closest && p.idx === closest.idx) {
+          ctx.shadowColor = p.color;
+          ctx.shadowBlur = 8;
+        }
+        ctx.beginPath();
+        p.pts.forEach(function(pt, i) { if (i === 0) ctx.moveTo(pt.x, pt.y); else ctx.lineTo(pt.x, pt.y); });
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        var lastPt = p.pts[p.pts.length - 1];
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(lastPt.x, lastPt.y, closest && p.idx === closest.idx ? 7 : 5, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      ctx.strokeStyle = '#f85149'; ctx.lineWidth = 2; ctx.setLineDash([5, 5]);
+      ctx.beginPath(); ctx.moveTo(pad.l, yS(0)); ctx.lineTo(W - pad.r, yS(0)); ctx.stroke(); ctx.setLineDash([]);
+    }
+
+    if (closest) {
+      var r = closest.result;
+      var res = r.res;
+      var analysis = r.analysis;
+
+      var html = '<div style="border-bottom:1px solid #555;padding-bottom:6px;margin-bottom:6px;">';
+      html += '<strong style="color:' + r.color + ';">' + r.name + '</strong>';
+      html += '<span style="float:right;color:' + (res.failed ? '#f85149' : '#2ea043') + ';">' + (res.failed ? '❌ FAILED' : '✅ OK') + '</span></div>';
+
+      html += '<div style="display:grid;grid-template-columns:auto auto;gap:4px 16px;margin-bottom:8px;">';
+      html += '<span style="color:#8b8b9b;">Duration:</span><span>' + res.years.toFixed(1) + ' years</span>';
+      html += '<span style="color:#8b8b9b;">Final balance:</span><span>£' + (res.final/1e6).toFixed(2) + 'M</span>';
+      html += '<span style="color:#8b8b9b;">Protection:</span><span>' + res.protMonths + ' months</span>';
+      html += '<span style="color:#8b8b9b;">Max streak:</span><span>' + res.maxConsec + ' months</span>';
+      html += '</div>';
+
+      // Fund analysis
+      if (analysis.worstFund) {
+        html += '<div style="border-top:1px solid #555;padding-top:8px;margin-top:4px;">';
+        html += '<div style="color:#7eb8da;font-weight:bold;margin-bottom:4px;">🔍 Analysis</div>';
+        html += '<div style="font-size:12px;">Most stressed: <strong>' + analysis.worstFund + '</strong> (' + (analysis.fundAnalysis[analysis.worstFund.toLowerCase() + 'Drop'] * 100).toFixed(0) + '%)</div>';
+        html += '</div>';
+      }
+
+      // Recommendations for failed
+      if (res.failed && analysis.recommendations.length > 0) {
+        html += '<div style="border-top:1px solid #555;padding-top:8px;margin-top:8px;">';
+        html += '<div style="color:#2ea043;font-weight:bold;margin-bottom:4px;">💡 Recommendations</div>';
+        analysis.recommendations.forEach(function(rec) {
+          html += '<div style="font-size:12px;">• ' + rec.text + '</div>';
+        });
+        html += '</div>';
+      }
+
+      tooltip.innerHTML = html;
+      tooltip.style.display = 'block';
+      tooltip.style.left = (e.clientX + 15) + 'px';
+      tooltip.style.top = (e.clientY - 10) + 'px';
+      tooltip.style.maxWidth = '300px';
+    } else {
+      tooltip.style.display = 'none';
+    }
+  };
+
+  c.onmouseleave = function() {
+    document.getElementById('chartTooltip').style.display = 'none';
+    if (scenHighlightIdx !== -1) {
+      scenHighlightIdx = -1;
+      ctx.fillStyle = 'rgba(15,15,26,1)';
+      ctx.fillRect(pad.l, pad.t, W - pad.l - pad.r, H - pad.t - pad.b);
+
+      ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 1;
+      for (var gi = 0; gi <= 5; gi++) { var gy = pad.t + (gi/5) * (H - pad.t - pad.b); ctx.beginPath(); ctx.moveTo(pad.l, gy); ctx.lineTo(W - pad.r, gy); ctx.stroke(); }
+
+      if (glide && glide.length > 0) {
+        ctx.strokeStyle = '#7eb8da'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 2]);
+        ctx.beginPath();
+        glide.forEach(function(g, i) { var gx = xS(g.year), gyy = yS(g.min); if (i === 0) ctx.moveTo(gx, gyy); else ctx.lineTo(gx, gyy); });
+        ctx.stroke(); ctx.setLineDash([]);
+      }
+
+      scenTrajParams.paths.forEach(function(p) {
+        ctx.strokeStyle = p.color; ctx.lineWidth = 3;
+        ctx.beginPath();
+        p.pts.forEach(function(pt, i) { if (i === 0) ctx.moveTo(pt.x, pt.y); else ctx.lineTo(pt.x, pt.y); });
+        ctx.stroke();
+        var lastPt = p.pts[p.pts.length - 1];
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(lastPt.x, lastPt.y, 5, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      ctx.strokeStyle = '#f85149'; ctx.lineWidth = 2; ctx.setLineDash([5, 5]);
+      ctx.beginPath(); ctx.moveTo(pad.l, yS(0)); ctx.lineTo(W - pad.r, yS(0)); ctx.stroke(); ctx.setLineDash([]);
+    }
+  };
+}
+
+function showDrawdownSchedule() {
+  var s = getStressDB().settings;
+  var inf = +document.getElementById('ddInflation').value / 100;
+  var dur = +document.getElementById('ddDuration').value;
+  
+  var h = '<table><thead><tr><th>Yr</th><th>BRL</th><th>Other</th><th>State</th><th>SIPP Draw</th><th>Total Taxable</th></tr></thead><tbody>';
+  var yearlyInf = [];
+  for (var y = 0; y <= dur; y++) {
+    if (y > 0) yearlyInf.push(inf);
+    var cumInf = Math.pow(1 + inf, y);
+    var tax = calcSIPPDraw(s, y, cumInf, yearlyInf);
+    var total = tax.sippDraw + tax.other + tax.statePension;
+    if (y % 5 === 0 || y === dur || y === s.statePensionYear) {
+      var hl = y === s.statePensionYear ? ' style="background:rgba(46,160,67,0.1);"' : '';
+      h += '<tr' + hl + '><td>' + y + (y === s.statePensionYear ? ' 🎉' : '') + '</td><td>£' + Math.round(tax.brl).toLocaleString() + '</td><td>£' + Math.round(tax.other).toLocaleString() + '</td><td>£' + Math.round(tax.statePension).toLocaleString() + '</td><td><strong>£' + Math.round(tax.sippDraw).toLocaleString() + '</strong></td><td>£' + Math.round(total).toLocaleString() + '</td></tr>';
+    }
+  }
+  h += '</tbody></table>';
+  h += '<div class="info-box" style="margin-top:20px;"><strong>Other:</strong> CPI capped at 4%/yr | <strong>State Pension:</strong> Full CPI</div>';
+  document.getElementById('drawdownResults').innerHTML = h;
+}
+
+function showGlidepath() {
+  var s = getStressDB().settings;
+  var inf = +document.getElementById('gpInflation').value / 100;
+  var dur = +document.getElementById('gpDuration').value;
+  
+  var h = '<table><thead><tr><th>Yr</th><th>PACW Min</th><th>CGT Min</th><th>CSH2 Target</th><th>Total Min</th></tr></thead><tbody>';
+  for (var y = 0; y <= dur; y++) {
+    var cumInf = Math.pow(1 + inf, y);
+    var pacw = calcGlidepath(s.pacwMin, y, dur, cumInf, true);
+    var cgt = calcGlidepath(s.cgtMin, y, dur, cumInf, true);
+    var csh2 = calcGlidepath(s.csh2Target, y, dur, cumInf, false);
+    if (y % 5 === 0 || y === dur) {
+      h += '<tr><td>' + y + '</td><td>£' + Math.round(pacw).toLocaleString() + '</td><td>£' + Math.round(cgt).toLocaleString() + '</td><td>£' + Math.round(csh2).toLocaleString() + '</td><td>£' + Math.round(pacw + cgt + csh2).toLocaleString() + '</td></tr>';
+    }
+  }
+  h += '</tbody></table>';
+  h += '<div class="info-box" style="margin-top:20px;"><strong>Goal:</strong> At year ' + dur + ', growth funds = £0, only CSH2 remains (£' + s.csh2Target.toLocaleString() + ' in real terms)</div>';
+  document.getElementById('glidepathResults').innerHTML = h;
+}
+
+function loadStressSettings() {
+  var s = getStressDB().settings;
+  document.getElementById('ssPACWMin').value = s.pacwMin;
+  document.getElementById('ssCGTMin').value = s.cgtMin;
+  document.getElementById('ssCSH2Target').value = s.csh2Target;
+  document.getElementById('ssDuration').value = s.duration;
+  document.getElementById('ssPA').value = s.pa;
+  document.getElementById('ssBRL').value = s.brl;
+  document.getElementById('ssHRL').value = s.hrl || 125140;
+  document.getElementById('ssTaxMode').value = s.taxMode;
+  document.getElementById('ssOther').value = s.other;
+  document.getElementById('ssStatePension').value = s.statePension;
+  document.getElementById('ssStatePensionYear').value = s.statePensionYear;
+  document.getElementById('ssConsecutiveLimit').value = s.consecutiveLimit;
+  document.getElementById('ssProtectionMult').value = s.protectionMult;
+  document.getElementById('ssDisableProtection').checked = s.disableProtection || false;
+  document.getElementById('ssHodlEnabled').checked = s.hodlEnabled || false;
+  document.getElementById('ssHodlValue').value = s.hodlValue || 25000;
+}
+
+function saveStressSettings() {
+  var db = getStressDB();
+  db.settings.pacwMin = +document.getElementById('ssPACWMin').value;
+  db.settings.cgtMin = +document.getElementById('ssCGTMin').value;
+  db.settings.csh2Target = +document.getElementById('ssCSH2Target').value;
+  db.settings.duration = +document.getElementById('ssDuration').value;
+  db.settings.pa = +document.getElementById('ssPA').value;
+  db.settings.brl = +document.getElementById('ssBRL').value;
+  db.settings.hrl = +document.getElementById('ssHRL').value;
+  db.settings.taxMode = document.getElementById('ssTaxMode').value;
+  db.settings.other = +document.getElementById('ssOther').value;
+  db.settings.statePension = +document.getElementById('ssStatePension').value;
+  db.settings.statePensionYear = +document.getElementById('ssStatePensionYear').value;
+  db.settings.consecutiveLimit = +document.getElementById('ssConsecutiveLimit').value;
+  db.settings.protectionMult = +document.getElementById('ssProtectionMult').value;
+  db.settings.disableProtection = document.getElementById('ssDisableProtection').checked;
+  db.settings.hodlEnabled = document.getElementById('ssHodlEnabled').checked;
+  db.settings.hodlValue = +document.getElementById('ssHodlValue').value;
+  saveStressDB(db);
+  alert('Saved!');
+}
+
+function exportHistoryCSV() {
+  var db = getDecisionDB();
+  if (!db.history.length) { alert('No history to export'); return; }
+  
+  // CSV header
+  var csv = 'Date,Tax Year,Year Num,PACW,CGT,CSH2,Total,Source,SIPP Draw,ISA Draw,Other,State Pension,In Protection,Reason,Rebalance,Adj PACW Min,Adj CGT Min,Adj CSH2 Target\n';
+  
+  // CSV rows
+  db.history.forEach(function(h) {
+    csv += [
+      h.date,
+      h.taxYear,
+      h.yearNum,
+      h.pacw,
+      h.cgt,
+      h.csh2,
+      h.total,
+      h.source,
+      h.sipp ? h.sipp.toFixed(2) : '',
+      h.isa ? h.isa.toFixed(2) : '',
+      h.other ? h.other.toFixed(2) : '',
+      h.state ? h.state.toFixed(2) : '',
+      h.inProtection ? 'Yes' : 'No',
+      '"' + (h.reason || '').replace(/"/g, '""') + '"',
+      '"' + (h.rebal || '').replace(/"/g, '""') + '"',
+      h.adjPACW,
+      h.adjCGT,
+      h.adjCSH2
+    ].join(',') + '\n';
+  });
+  
+  // Download
+  var blob = new Blob([csv], { type: 'text/csv' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'pension-history-' + new Date().toISOString().split('T')[0] + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function importHistoryCSV(input) {
+  if (!input.files || !input.files[0]) return;
+  var file = input.files[0];
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var lines = e.target.result.split('\n').filter(function(l) { return l.trim(); });
+    if (lines.length < 2) { alert('No data in file'); return; }
+
+    var headers = lines[0].split(',').map(function(h) { return h.trim().toLowerCase().replace(/ /g, ''); });
+    var db = getDecisionDB();
+    var imported = 0, skipped = 0;
+
+    for (var i = 1; i < lines.length; i++) {
+      var values = parseCSVLine(lines[i]);
+      if (values.length < 7) continue;
+
+      var h = {};
+      headers.forEach(function(hdr, idx) {
+        var v = values[idx] || '';
+        // Map CSV columns to history object properties
+        if (hdr === 'date') h.date = v;
+        else if (hdr === 'taxyear') h.taxYear = v;
+        else if (hdr === 'yearnum') h.yearNum = parseInt(v) || 0;
+        else if (hdr === 'pacw') h.pacw = parseFloat(v) || 0;
+        else if (hdr === 'cgt') h.cgt = parseFloat(v) || 0;
+        else if (hdr === 'csh2') h.csh2 = parseFloat(v) || 0;
+        else if (hdr === 'total') h.total = parseFloat(v) || 0;
+        else if (hdr === 'source') h.source = v;
+        else if (hdr === 'sippdraw') h.sipp = parseFloat(v) || 0;
+        else if (hdr === 'isadraw') h.isa = parseFloat(v) || 0;
+        else if (hdr === 'other') h.other = parseFloat(v) || 0;
+        else if (hdr === 'statepension') h.state = parseFloat(v) || 0;
+        else if (hdr === 'inprotection') h.inProtection = v.toLowerCase() === 'yes';
+        else if (hdr === 'reason') h.reason = v;
+        else if (hdr === 'rebalance') h.rebal = v;
+        else if (hdr === 'adjpacwmin') h.adjPACW = parseFloat(v) || 0;
+        else if (hdr === 'adjcgtmin') h.adjCGT = parseFloat(v) || 0;
+        else if (hdr === 'adjcsh2target') h.adjCSH2 = parseFloat(v) || 0;
+      });
+
+      if (!h.date) continue;
+
+      // Check for duplicate
+      var exists = db.history.some(function(existing) { return existing.date === h.date; });
+      if (exists) { skipped++; continue; }
+
+      db.history.push(h);
+      imported++;
+    }
+
+    // Sort by date
+    db.history.sort(function(a, b) { return a.date.localeCompare(b.date); });
+    saveDecisionDB(db);
+    renderHistory();
+    alert('Imported ' + imported + ' records' + (skipped > 0 ? ' (' + skipped + ' duplicates skipped)' : ''));
+  };
+  reader.readAsText(file);
+  input.value = ''; // Reset for next import
+}
+
+function parseCSVLine(line) {
+  var result = [], current = '', inQuotes = false;
+  for (var i = 0; i < line.length; i++) {
+    var c = line[i];
+    if (c === '"') { inQuotes = !inQuotes; }
+    else if (c === ',' && !inQuotes) { result.push(current.trim()); current = ''; }
+    else { current += c; }
+  }
+  result.push(current.trim());
+  return result;
+}
+
+function exportTaxYears() {
+  var db = getDecisionDB();
+  var exportData = {
+    version: '5.3.0',
+    type: 'tax-years',
+    exportDate: new Date().toISOString(),
+    taxYears: db.taxYears
+  };
+
+  var blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'pension-taxyears-' + new Date().toISOString().split('T')[0] + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function importTaxYears(input) {
+  if (!input.files || !input.files[0]) return;
+  var file = input.files[0];
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var data = JSON.parse(e.target.result);
+      if (!data.taxYears) {
+        alert('Invalid file format. No tax years found.');
+        return;
+      }
+
+      var db = getDecisionDB();
+      var imported = 0, updated = 0;
+
+      Object.keys(data.taxYears).forEach(function(ty) {
+        if (db.taxYears[ty]) {
+          // Update existing
+          db.taxYears[ty] = data.taxYears[ty];
+          updated++;
+        } else {
+          // Add new
+          db.taxYears[ty] = data.taxYears[ty];
+          imported++;
+        }
+      });
+
+      saveDecisionDB(db);
+      renderTaxYears();
+      alert('Tax years: ' + imported + ' added, ' + updated + ' updated');
+    } catch (err) {
+      alert('Error reading file: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+function exportDecisionSettings() {
+  var db = getDecisionDB();
+  var exportData = {
+    version: '5.3.0',
+    type: 'decision-all',
+    exportDate: new Date().toISOString(),
+    lastModified: db.lastModified,
+    settings: db.settings,
+    taxYears: db.taxYears,
+    history: db.history
+  };
+
+  var blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'pension-decision-' + new Date().toISOString().split('T')[0] + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function importDecisionSettings(input) {
+  if (!input.files || !input.files[0]) return;
+  var file = input.files[0];
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var data = JSON.parse(e.target.result);
+      if (!data.type || (data.type !== 'decision-all' && data.type !== 'decision-settings')) {
+        alert('Invalid file format. Expected Decision Tool export file.');
+        return;
+      }
+
+      var db = getDecisionDB();
+      var imported = [];
+
+      // Import settings (with migration for missing fields)
+      if (data.settings) {
+        Object.keys(data.settings).forEach(function(key) {
+          if (db.settings.hasOwnProperty(key) || key in db.settings) {
+            db.settings[key] = data.settings[key];
+          }
+        });
+        imported.push('settings');
+      }
+
+      // Import tax years
+      if (data.taxYears) {
+        Object.keys(data.taxYears).forEach(function(ty) {
+          db.taxYears[ty] = data.taxYears[ty];
+        });
+        imported.push('tax years');
+      }
+
+      // Import history (merge, skip duplicates)
+      if (data.history && data.history.length > 0) {
+        var newCount = 0;
+        data.history.forEach(function(h) {
+          var exists = db.history.some(function(existing) { return existing.date === h.date; });
+          if (!exists) { db.history.push(h); newCount++; }
+        });
+        db.history.sort(function(a, b) { return a.date.localeCompare(b.date); });
+        if (newCount > 0) imported.push(newCount + ' history records');
+      }
+
+      saveDecisionDB(db);
+      loadDecisionSettings();
+      renderTaxYears();
+      renderHistory();
+      alert('Imported: ' + imported.join(', '));
+    } catch (err) {
+      alert('Error reading file: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+function exportStressSettings() {
+  var db = getStressDB();
+  var exportData = {
+    version: '5.3.0',
+    type: 'stress-settings',
+    lastModified: db.lastModified,
+    exportDate: new Date().toISOString(),
+    settings: db.settings
+  };
+
+  var blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'pension-stress-' + new Date().toISOString().split('T')[0] + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function importStressSettings(input) {
+  if (!input.files || !input.files[0]) return;
+  var file = input.files[0];
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var data = JSON.parse(e.target.result);
+      if (!data.type || data.type !== 'stress-settings') {
+        alert('Invalid file format. Expected Stress Tester export file.');
+        return;
+      }
+
+      var db = getStressDB();
+
+      // Import settings with migration for missing/new fields
+      if (data.settings) {
+        Object.keys(data.settings).forEach(function(key) {
+          db.settings[key] = data.settings[key];
+        });
+        // Ensure HODL fields exist
+        if (db.settings.hodlEnabled === undefined) db.settings.hodlEnabled = false;
+        if (db.settings.hodlValue === undefined) db.settings.hodlValue = 25000;
+      }
+
+      localStorage.setItem(STRESS_KEY, JSON.stringify(db));
+      loadStressSettings();
+      alert('Stress settings imported successfully');
+    } catch (err) {
+      alert('Error reading file: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+window.onload = async function() {
+  // Check if localStorage has data BEFORE calling getters (which create defaults)
+  var rawDecision = localStorage.getItem(DECISION_KEY);
+  var rawStress = localStorage.getItem(STRESS_KEY);
+  var hadDecisionData = rawDecision !== null;
+  var hadStressData = rawStress !== null;
+
+  console.log('Startup check - hadDecisionData:', hadDecisionData, 'hadStressData:', hadStressData);
+  if (rawDecision) {
+    var parsed = JSON.parse(rawDecision);
+    console.log('Decision checksum:', parsed.checksum, 'lastModified:', parsed.lastModified);
+  }
+
+  var decisionDB = getDecisionDB();
+  var stressDB = getStressDB();
+  renderHistory();
+  renderTaxYears();
+  loadDecisionSettings();
+  loadStressSettings();
+  var now = new Date();
+  document.getElementById('entryMonth').value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+
+  // Check for external backup files and compare timestamps
+  if (window.pensionBackup) {
+    await checkExternalBackups(decisionDB, stressDB, hadDecisionData, hadStressData);
+  } else {
+    // Fallback for non-Electron environment (e.g., browser testing)
+    var isFreshStart = decisionDB.history.length === 0;
+    if (isFreshStart) {
+      showManualRestorePrompt();
+    }
+  }
+
+  // Register service worker for PWA
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('data:text/javascript,' + encodeURIComponent(
+      "self.addEventListener('install', e => self.skipWaiting());" +
+      "self.addEventListener('activate', e => e.waitUntil(clients.claim()));" +
+      "self.addEventListener('fetch', e => e.respondWith(fetch(e.request).catch(() => caches.match(e.request))));"
+    )).catch(function() { /* SW registration failed, but app still works */ });
+  }
+
+  // beforeunload is not used - we handle exit via autoBackupOnExit called from main process
+};
+
+// Called by main process on window close - auto-backup if changes exist
+async function autoBackupOnExit() {
+  if (hasUnsavedChanges && window.pensionBackup) {
+    console.log('Auto-backing up on exit (unsaved changes detected)');
+    await exportToBackupDir();
+  }
+}
+
+// Check external backup files and auto-restore if no internal data
+async function checkExternalBackups(decisionDB, stressDB, hadDecisionData, hadStressData) {
+  try {
+    var backupFiles = await window.pensionBackup.getBackupFiles();
+    var hasExternalFiles = backupFiles.decision.length > 0 || backupFiles.stress.length > 0;
+
+    console.log('Startup: hadDecisionData=' + hadDecisionData + ', hadStressData=' + hadStressData + ', hasExternalFiles=' + hasExternalFiles);
+
+    // If no internal data but external files exist -> silently restore (no prompt)
+    if (!hadDecisionData && !hadStressData && hasExternalFiles) {
+      console.log('No internal data found - auto-restoring from external backups');
+      await silentRestoreFromBackups(backupFiles);
+      return;
+    }
+
+    // If no internal data and no external files -> show manual restore option (first time use)
+    if (!hadDecisionData && !hadStressData && !hasExternalFiles) {
+      showManualRestorePrompt();
+      return;
+    }
+
+    // Have internal data - ensure external backups exist
+    if (hadDecisionData || hadStressData) {
+      var needsExport = backupFiles.decision.length === 0 || backupFiles.stress.length === 0 ||
+                        backupFiles.history.length === 0 || backupFiles.taxYears.length === 0;
+      if (needsExport) {
+        console.log('Missing external backups - auto-exporting');
+        await exportToBackupDir(true);
+      } else {
+        console.log('Internal and external backups both exist - in sync');
+      }
+    }
+  } catch (err) {
+    console.error('Error checking external backups:', err);
+  }
+}
+
+// Show prompt when external files are newer than internal data
+async function showNewerFilesPrompt(newerFiles) {
+  var modal = document.createElement('div');
+  modal.id = 'newerFilesModal';
+  modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:10000;';
+
+  var fileList = newerFiles.map(function(f) {
+    var extDate = new Date(f.file.mtime).toLocaleString();
+    var intDate = f.internalDate.getTime() > 0 ? f.internalDate.toLocaleString() : 'Never';
+    return '<div style="background:var(--card-alt);padding:12px;border-radius:6px;margin-bottom:8px;">' +
+      '<div style="color:var(--primary);font-weight:bold;">' + (f.type === 'decision' ? 'Decision Tool' : 'Stress Tester') + '</div>' +
+      '<div style="font-size:12px;color:var(--text-muted);">External: ' + extDate + '</div>' +
+      '<div style="font-size:12px;color:var(--text-muted);">Internal: ' + intDate + '</div>' +
+      '</div>';
+  }).join('');
+
+  modal.innerHTML = '<div style="background:var(--card);padding:32px;border-radius:12px;max-width:500px;width:90%;">' +
+    '<h2 style="margin:0 0 16px 0;color:var(--warning);">Newer Backup Files Found</h2>' +
+    '<p style="color:var(--text-muted);margin-bottom:16px;">External backup files are newer than your current data:</p>' +
+    fileList +
+    '<div style="display:flex;gap:12px;margin-top:20px;">' +
+    '<button class="primary" onclick="restoreFromNewerFiles(' + JSON.stringify(newerFiles).replace(/"/g, '&quot;') + ')" style="flex:1;">Update from External</button>' +
+    '<button class="secondary" onclick="document.getElementById(\'newerFilesModal\').remove()" style="flex:1;">Keep Current</button>' +
+    '</div></div>';
+  document.body.appendChild(modal);
+}
+
+// Restore from newer external files
+async function restoreFromNewerFiles(newerFiles) {
+  var syncTimestamp = new Date().toISOString();
+
+  for (var i = 0; i < newerFiles.length; i++) {
+    var f = newerFiles[i];
+    var result = await window.pensionBackup.readBackupFile(f.file.path);
+    if (result.success) {
+      if (f.type === 'decision') {
+        var data = JSON.parse(result.content);
+        var db = getDecisionDB();
+        if (data.settings) Object.assign(db.settings, data.settings);
+        if (data.taxYears) Object.assign(db.taxYears, data.taxYears);
+        if (data.history) {
+          data.history.forEach(function(h) {
+            var exists = db.history.some(function(ex) { return ex.date === h.date; });
+            if (!exists) db.history.push(h);
+          });
+          db.history.sort(function(a, b) { return a.date.localeCompare(b.date); });
+        }
+        // Set timestamp and checksum to sync
+        db.lastModified = syncTimestamp;
+        db.checksum = generateDecisionChecksum(db);
+        localStorage.setItem(DECISION_KEY, JSON.stringify(db));
+        loadDecisionSettings();
+        renderTaxYears();
+        renderHistory();
+      } else if (f.type === 'stress') {
+        var data = JSON.parse(result.content);
+        var db = getStressDB();
+        if (data.settings) Object.assign(db.settings, data.settings);
+        // Set timestamp and checksum to sync
+        db.lastModified = syncTimestamp;
+        db.checksum = generateStressChecksum(db);
+        localStorage.setItem(STRESS_KEY, JSON.stringify(db));
+        loadStressSettings();
+      }
+    }
+  }
+  document.getElementById('newerFilesModal').remove();
+
+  // Re-export to sync external files with same timestamp
+  await exportToBackupDir(true);
+  alert('Data restored and synced!');
+}
+
+// Silent restore from backups (no prompts, no alerts)
+async function silentRestoreFromBackups(backupFiles) {
+  try {
+    if (backupFiles.decision.length > 0) {
+      var result = await window.pensionBackup.readBackupFile(backupFiles.decision[0].path);
+      if (result.success) {
+        var data = JSON.parse(result.content);
+        var db = getDecisionDB();
+        if (data.settings) Object.assign(db.settings, data.settings);
+        if (data.taxYears) Object.assign(db.taxYears, data.taxYears);
+        if (data.history) db.history = data.history;
+        db.lastModified = data.lastModified || new Date().toISOString();
+        db.checksum = data.checksum || generateDecisionChecksum(db);
+        localStorage.setItem(DECISION_KEY, JSON.stringify(db));
+      }
+    }
+
+    if (backupFiles.stress.length > 0) {
+      var result = await window.pensionBackup.readBackupFile(backupFiles.stress[0].path);
+      if (result.success) {
+        var data = JSON.parse(result.content);
+        var db = getStressDB();
+        if (data.settings) Object.assign(db.settings, data.settings);
+        db.lastModified = data.lastModified || new Date().toISOString();
+        db.checksum = data.checksum || generateStressChecksum(db);
+        localStorage.setItem(STRESS_KEY, JSON.stringify(db));
+      }
+    }
+
+    // Reload UI with restored data
+    loadDecisionSettings();
+    loadStressSettings();
+    renderTaxYears();
+    renderHistory();
+    console.log('Silent restore completed');
+  } catch (err) {
+    console.error('Silent restore error:', err);
+  }
+}
+
+// Show auto-restore prompt for fresh start with external files
+async function showAutoRestorePrompt(backupFiles) {
+  var backupDir = await window.pensionBackup.getBackupDir();
+  var modal = document.createElement('div');
+  modal.id = 'restoreModal';
+  modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:10000;';
+
+  var fileInfo = '';
+  if (backupFiles.decision.length > 0) {
+    fileInfo += '<div style="font-size:12px;color:var(--text-muted);">Decision: ' + backupFiles.decision[0].name + '</div>';
+  }
+  if (backupFiles.stress.length > 0) {
+    fileInfo += '<div style="font-size:12px;color:var(--text-muted);">Stress: ' + backupFiles.stress[0].name + '</div>';
+  }
+
+  modal.innerHTML = '<div style="background:var(--card);padding:32px;border-radius:12px;max-width:500px;width:90%;">' +
+    '<h2 style="margin:0 0 16px 0;color:var(--primary);">Welcome to Pension Planner</h2>' +
+    '<p style="color:var(--text-muted);margin-bottom:16px;">External backup files found in:<br><code style="font-size:11px;background:var(--card-alt);padding:4px 8px;border-radius:4px;">' + backupDir + '</code></p>' +
+    fileInfo +
+    '<div style="display:flex;flex-direction:column;gap:12px;margin-top:20px;">' +
+    '<button class="primary" onclick="autoRestoreFromBackups()" style="width:100%;">Restore from Latest Backups</button>' +
+    '<button class="secondary" onclick="showManualRestorePrompt();document.getElementById(\'restoreModal\').remove();" style="width:100%;">Choose Files Manually</button>' +
+    '<button style="background:transparent;border:1px solid var(--border);color:var(--text-muted);" onclick="document.getElementById(\'restoreModal\').remove()">Start Fresh</button>' +
+    '</div></div>';
+  document.body.appendChild(modal);
+}
+
+// Auto-restore from latest backup files
+async function autoRestoreFromBackups() {
+  try {
+    var backupFiles = await window.pensionBackup.getBackupFiles();
+    var syncTimestamp = new Date().toISOString();
+
+    if (backupFiles.decision.length > 0) {
+      var result = await window.pensionBackup.readBackupFile(backupFiles.decision[0].path);
+      if (result.success) {
+        var data = JSON.parse(result.content);
+        var db = getDecisionDB();
+        if (data.settings) Object.assign(db.settings, data.settings);
+        if (data.taxYears) Object.assign(db.taxYears, data.taxYears);
+        if (data.history) db.history = data.history;
+        // Set timestamp and checksum to sync with what we'll export
+        db.lastModified = syncTimestamp;
+        db.checksum = generateDecisionChecksum(db);
+        localStorage.setItem(DECISION_KEY, JSON.stringify(db));
+      }
+    }
+
+    if (backupFiles.stress.length > 0) {
+      var result = await window.pensionBackup.readBackupFile(backupFiles.stress[0].path);
+      if (result.success) {
+        var data = JSON.parse(result.content);
+        var db = getStressDB();
+        if (data.settings) Object.assign(db.settings, data.settings);
+        // Set timestamp and checksum to sync with what we'll export
+        db.lastModified = syncTimestamp;
+        db.checksum = generateStressChecksum(db);
+        localStorage.setItem(STRESS_KEY, JSON.stringify(db));
+      }
+    }
+
+    loadDecisionSettings();
+    loadStressSettings();
+    renderTaxYears();
+    renderHistory();
+    document.getElementById('restoreModal').remove();
+
+    // Re-export to sync external files with same timestamp
+    await exportToBackupDir(true);
+    alert('Data restored and synced!');
+  } catch (err) {
+    alert('Error restoring: ' + err.message);
+  }
+}
+
+// Export all data to external backup directory
+async function exportToBackupDir() {
+  if (!window.pensionBackup) {
+    alert('Backup to directory only available in desktop app');
+    return;
+  }
+
+  try {
+    var decisionDB = getDecisionDB();
+    var stressDB = getStressDB();
+
+    // Generate checksums and set export timestamp
+    var exportTimestamp = new Date().toISOString();
+    var decisionChecksum = generateDecisionChecksum(decisionDB);
+    var stressChecksum = generateStressChecksum(stressDB);
+
+    // Build decision export with checksum
+    var decisionExport = {
+      version: '5.3.0',
+      type: 'decision-all',
+      exportDate: exportTimestamp,
+      lastModified: exportTimestamp,
+      checksum: decisionChecksum,
+      settings: decisionDB.settings,
+      taxYears: decisionDB.taxYears,
+      history: decisionDB.history
+    };
+
+    // Build stress export with checksum
+    var stressExport = {
+      version: '5.3.0',
+      type: 'stress-settings',
+      exportDate: exportTimestamp,
+      lastModified: exportTimestamp,
+      checksum: stressChecksum,
+      settings: stressDB.settings
+    };
+
+    // Build history CSV
+    var csv = 'Date,Tax Year,Year Num,PACW,CGT,CSH2,Total,Source,SIPP Draw,ISA Draw,Other,State Pension,In Protection,Reason,Rebalance,Adj PACW Min,Adj CGT Min,Adj CSH2 Target\n';
+    decisionDB.history.forEach(function(h) {
+      csv += [h.date, h.taxYear, h.yearNum, h.pacw, h.cgt, h.csh2, h.total, h.source,
+        h.sipp ? h.sipp.toFixed(2) : '', h.isa ? h.isa.toFixed(2) : '',
+        h.other ? h.other.toFixed(2) : '', h.state ? h.state.toFixed(2) : '',
+        h.inProtection ? 'Yes' : 'No', '"' + (h.reason || '').replace(/"/g, '""') + '"',
+        '"' + (h.rebal || '').replace(/"/g, '""') + '"', h.adjPACW, h.adjCGT, h.adjCSH2
+      ].join(',') + '\n';
+    });
+
+    // Build tax years export
+    var taxYearsExport = {
+      version: '5.3.0',
+      type: 'tax-years',
+      exportDate: exportTimestamp,
+      taxYears: decisionDB.taxYears
+    };
+
+    var result = await window.pensionBackup.writeBackupFiles({
+      decision: JSON.stringify(decisionExport, null, 2),
+      stress: JSON.stringify(stressExport, null, 2),
+      history: csv,
+      taxYears: JSON.stringify(taxYearsExport, null, 2)
+    });
+
+    if (result.success) {
+      // Sync internal storage with export timestamp and checksum
+      decisionDB.lastModified = exportTimestamp;
+      decisionDB.checksum = decisionChecksum;
+      decisionDB.lastExported = exportTimestamp;
+      localStorage.setItem(DECISION_KEY, JSON.stringify(decisionDB));
+
+      stressDB.lastModified = exportTimestamp;
+      stressDB.checksum = stressChecksum;
+      stressDB.lastExported = exportTimestamp;
+      localStorage.setItem(STRESS_KEY, JSON.stringify(stressDB));
+
+      hasUnsavedChanges = false; // Reset the flag after successful export
+      return { success: true, dir: result.dir, files: result.written };
+    } else {
+      throw new Error(result.error);
+    }
+  } catch (err) {
+    console.error('Export error:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+// Show exit backup prompt
+async function showExitBackupPrompt() {
+  if (!window.pensionBackup) return true; // No backup API, just exit
+
+  var modal = document.createElement('div');
+  modal.id = 'exitBackupModal';
+  modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:10000;';
+
+  var backupDir = await window.pensionBackup.getBackupDir();
+
+  modal.innerHTML = '<div style="background:var(--card);padding:32px;border-radius:12px;max-width:450px;width:90%;">' +
+    '<h2 style="margin:0 0 16px 0;color:var(--primary);">Export Backup?</h2>' +
+    '<p style="color:var(--text-muted);margin-bottom:16px;">Would you like to save your current data to the backup directory?</p>' +
+    '<p style="font-size:11px;color:var(--text-muted);margin-bottom:20px;"><code style="background:var(--card-alt);padding:4px 8px;border-radius:4px;">' + backupDir + '</code></p>' +
+    '<div style="display:flex;gap:12px;">' +
+    '<button class="primary" onclick="doExitWithBackup()" style="flex:1;">Export & Exit</button>' +
+    '<button class="secondary" onclick="document.getElementById(\'exitBackupModal\').remove()" style="flex:1;">Cancel</button>' +
+    '</div></div>';
+  document.body.appendChild(modal);
+}
+
+async function doExitWithBackup() {
+  var result = await exportToBackupDir();
+  document.getElementById('exitBackupModal').remove();
+  if (result.success) {
+    alert('Backup saved to:\n' + result.dir + '\n\nFiles: ' + result.files.join(', '));
+  } else {
+    alert('Backup failed: ' + result.error);
+  }
+}
+
+function showManualRestorePrompt() {
+  // Remove any existing modal first
+  var existing = document.getElementById('restoreModal');
+  if (existing) existing.remove();
+
+  var modal = document.createElement('div');
+  modal.id = 'restoreModal';
+  modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:10000;';
+  modal.innerHTML = '<div style="background:var(--card);padding:32px;border-radius:12px;max-width:500px;width:90%;">' +
+    '<h2 style="margin:0 0 16px 0;color:var(--primary);">Welcome to Pension Planner</h2>' +
+    '<p style="color:var(--text-muted);margin-bottom:24px;">No existing data found. Would you like to restore from a backup file?</p>' +
+    '<div style="display:flex;flex-direction:column;gap:12px;">' +
+    '<button class="primary" onclick="triggerRestoreDecision()" style="width:100%;">Import Decision Tool Backup (.json)</button>' +
+    '<button class="secondary" onclick="triggerRestoreHistory()" style="width:100%;">Import History Only (.csv)</button>' +
+    '<button class="secondary" onclick="triggerRestoreStress()" style="width:100%;">Import Stress Settings (.json)</button>' +
+    '<div style="border-top:1px solid var(--border);margin:12px 0;"></div>' +
+    '<button style="background:transparent;border:1px solid var(--border);color:var(--text-muted);" onclick="document.getElementById(\'restoreModal\').remove()">Start Fresh</button>' +
+    '</div>' +
+    '<input type="file" id="restoreDecisionFile" accept=".json" style="display:none" onchange="handleRestoreDecision(this)">' +
+    '<input type="file" id="restoreHistoryFile" accept=".csv" style="display:none" onchange="handleRestoreHistory(this)">' +
+    '<input type="file" id="restoreStressFile" accept=".json" style="display:none" onchange="handleRestoreStress(this)">' +
+    '</div>';
+  document.body.appendChild(modal);
+}
+
+function triggerRestoreDecision() { document.getElementById('restoreDecisionFile').click(); }
+function triggerRestoreHistory() { document.getElementById('restoreHistoryFile').click(); }
+function triggerRestoreStress() { document.getElementById('restoreStressFile').click(); }
+
+function handleRestoreDecision(input) {
+  if (!input.files || !input.files[0]) return;
+  var file = input.files[0];
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var data = JSON.parse(e.target.result);
+      // Accept both new format and legacy format
+      var db = getDecisionDB();
+
+      if (data.settings) {
+        Object.keys(data.settings).forEach(function(key) {
+          if (key in db.settings) db.settings[key] = data.settings[key];
+        });
+      }
+      if (data.taxYears) {
+        Object.keys(data.taxYears).forEach(function(ty) {
+          db.taxYears[ty] = data.taxYears[ty];
+        });
+      }
+      if (data.history) {
+        data.history.forEach(function(h) {
+          var exists = db.history.some(function(ex) { return ex.date === h.date; });
+          if (!exists) db.history.push(h);
+        });
+        db.history.sort(function(a, b) { return a.date.localeCompare(b.date); });
+      }
+
+      saveDecisionDB(db);
+      loadDecisionSettings();
+      renderTaxYears();
+      renderHistory();
+      document.getElementById('restoreModal').remove();
+      alert('Decision Tool data restored successfully!');
+    } catch (err) {
+      alert('Error reading file: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function handleRestoreHistory(input) {
+  importHistoryCSV(input);
+  var modal = document.getElementById('restoreModal');
+  if (modal) modal.remove();
+}
+
+function handleRestoreStress(input) {
+  if (!input.files || !input.files[0]) return;
+  var file = input.files[0];
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var data = JSON.parse(e.target.result);
+      var db = getStressDB();
+
+      if (data.settings) {
+        Object.keys(data.settings).forEach(function(key) {
+          db.settings[key] = data.settings[key];
+        });
+        if (db.settings.hodlEnabled === undefined) db.settings.hodlEnabled = false;
+        if (db.settings.hodlValue === undefined) db.settings.hodlValue = 25000;
+      }
+
+      localStorage.setItem(STRESS_KEY, JSON.stringify(db));
+      loadStressSettings();
+      document.getElementById('restoreModal').remove();
+      alert('Stress settings restored successfully!');
+    } catch (err) {
+      alert('Error reading file: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+</script>
+</body>
+</html>

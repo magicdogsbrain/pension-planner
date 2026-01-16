@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e"/>
+      <stop offset="100%" style="stop-color:#16213e"/>
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffd700"/>
+      <stop offset="50%" style="stop-color:#ffb700"/>
+      <stop offset="100%" style="stop-color:#ff9500"/>
+    </linearGradient>
+    <linearGradient id="greenGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" style="stop-color:#00b894"/>
+      <stop offset="100%" style="stop-color:#55efc4"/>
+    </linearGradient>
+    <linearGradient id="eggGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fff9e6"/>
+      <stop offset="50%" style="stop-color:#ffeaa7"/>
+      <stop offset="100%" style="stop-color:#fdcb6e"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background rounded square -->
+  <rect x="32" y="32" width="960" height="960" rx="180" fill="url(#bgGrad)"/>
+  
+  <!-- Nest (bottom) -->
+  <ellipse cx="512" cy="720" rx="280" ry="80" fill="#8b7355" opacity="0.9"/>
+  <ellipse cx="512" cy="700" rx="260" ry="70" fill="#a0826d"/>
+  <!-- Nest texture lines -->
+  <path d="M280 700 Q400 680 512 700 Q624 720 744 700" stroke="#6d5c4a" stroke-width="8" fill="none"/>
+  <path d="M300 720 Q420 700 512 720 Q604 740 724 720" stroke="#6d5c4a" stroke-width="6" fill="none"/>
+  
+  <!-- Golden Egg (nest egg - main element) -->
+  <ellipse cx="512" cy="580" rx="140" ry="180" fill="url(#eggGrad)"/>
+  <!-- Egg shine -->
+  <ellipse cx="470" cy="520" rx="40" ry="60" fill="white" opacity="0.4"/>
+  
+  <!-- Growth chart arrow going up -->
+  <path d="M200 500 L320 420 L440 460 L560 340 L680 380 L800 240" 
+        stroke="url(#greenGrad)" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- Arrow head -->
+  <polygon points="800,240 750,280 780,290 760,340 820,260" fill="#55efc4"/>
+  
+  <!-- Pound sterling symbol on egg -->
+  <text x="512" y="620" font-family="Arial, sans-serif" font-size="160" font-weight="bold" 
+        fill="url(#goldGrad)" text-anchor="middle">£</text>
+  
+  <!-- Small coins around nest -->
+  <circle cx="280" cy="680" r="35" fill="url(#goldGrad)"/>
+  <circle cx="744" cy="680" r="35" fill="url(#goldGrad)"/>
+  <circle cx="340" cy="750" r="28" fill="url(#goldGrad)" opacity="0.8"/>
+  <circle cx="684" cy="750" r="28" fill="url(#goldGrad)" opacity="0.8"/>
+</svg>
