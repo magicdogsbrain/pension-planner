@@ -906,7 +906,7 @@ function renderDecisionOutput(d) {
   h += '<div class="amount">£' + d.sipp.toFixed(2) + '</div>';
   h += '<div style="font-size:13px;"><strong>Source:</strong> ' + d.source + '<br><span style="color:var(--text-muted);font-family:monospace;">' + src + '</span></div>';
   h += '<div style="margin-top:12px;padding:12px;background:rgba(0,0,0,0.2);border-radius:8px;font-size:12px;">';
-  h += '<strong>Glidepath:</strong><br>Equity: £' + d.adjPACW.toLocaleString() + '<br>Bond: £' + d.adjCGT.toLocaleString() + '<br>Cash: £' + d.adjCSH2.toLocaleString() + '</div></div>';
+  h += '<strong>Glidepath:</strong><br>Equity: £' + d.adjEquity.toLocaleString() + '<br>Bond: £' + d.adjBond.toLocaleString() + '<br>Cash: £' + d.adjCash.toLocaleString() + '</div></div>';
   h += '<div><div style="font-size:12px;color:var(--text-muted);">Income</div>';
   h += '<div class="tax-breakdown" style="margin-top:8px;">';
   h += '<div class="tax-row" style="color:var(--primary);"><span>SIPP</span><span>£' + d.sipp.toFixed(2) + '</span></div>';
