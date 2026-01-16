@@ -892,7 +892,7 @@ function renderDecisionOutput(d) {
   else if (d.boostAmount > 50) { badge = '<span class="badge" style="background:#2ea043;color:white;">Tax Boost</span>'; }
   else if (d.source === 'Cash') cls += ' csh2-draw';
   
-  var src = d.source === 'Growth' ? 'Equity: £' + d.dPACW.toFixed(0) + ' | Bond: £' + d.dCGT.toFixed(0) : 'Cash: £' + d.dCSH2.toFixed(0);
+  var src = d.source === 'Growth' ? 'Equity: £' + d.dEquity.toFixed(0) + ' | Bond: £' + d.dBond.toFixed(0) : 'Cash: £' + d.dCash.toFixed(0);
   var grossTaxable = (d.sipp + d.other + d.state) * 12;
   var PA = 12570, BRL = 50270;
   var annualTax = grossTaxable <= PA ? 0 : (Math.min(grossTaxable, BRL) - PA) * 0.2;
