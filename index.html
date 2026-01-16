@@ -426,6 +426,7 @@ function getStressDB() {
     var db = {
       settings: {
         equityMin: 250000, bondMin: 200000, cashTarget: 50000, duration: 30,
+        baseSalary: 30000,
         pa: 12570, brl: 50270, hrl: 125140, taxMode: 'frozen',
         other: 0, statePension: 12000, statePensionYear: 12,
         protectionMult: 0.8, consecutiveLimit: 3, disableProtection: false,
@@ -443,6 +444,8 @@ function getStressDB() {
   // Migrate old settings without HODL
   if (db.settings.hodlEnabled === undefined) db.settings.hodlEnabled = false;
   if (db.settings.hodlValue === undefined) db.settings.hodlValue = 25000;
+  // Migrate old settings without baseSalary
+  if (db.settings.baseSalary === undefined) db.settings.baseSalary = 30000;
   return db;
 }
 
