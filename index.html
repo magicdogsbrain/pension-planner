@@ -381,17 +381,34 @@ function generateStressChecksum(db) {
 function getDecisionDB() {
   var raw = localStorage.getItem(DECISION_KEY);
   if (!raw) {
-    var db = { 
+    var db = {
       settings: { equityMin: 250000, bondMin: 200000, cashTarget: 50000, duration: 30, baseSalary: 30000, protectionFactor: 20, recoveryBuffer: 10000, consecutiveLimit: 3 },
       taxYears: {
         '25/26': { pa: 12570, brl: 50270, hrl: 125140, cpi: 0.025, other: 0, statePension: 0 }
       },
-      history: [] 
+      history: []
     };
     localStorage.setItem(DECISION_KEY, JSON.stringify(db));
     return db;
   }
-  return JSON.parse(raw);
+  var db = JSON.parse(raw);
+  // Migrate old property names (pacwMin/cgtMin/csh2Target → equityMin/bondMin/cashTarget)
+  if (db.settings.pacwMin !== undefined) { db.settings.equityMin = db.settings.pacwMin; delete db.settings.pacwMin; }
+  if (db.settings.cgtMin !== undefined) { db.settings.bondMin = db.settings.cgtMin; delete db.settings.cgtMin; }
+  if (db.settings.csh2Target !== undefined) { db.settings.cashTarget = db.settings.csh2Target; delete db.settings.csh2Target; }
+  // Migrate history records
+  db.history.forEach(function(h) {
+    if (h.pacw !== undefined) { h.equity = h.pacw; delete h.pacw; }
+    if (h.cgt !== undefined) { h.bond = h.cgt; delete h.cgt; }
+    if (h.csh2 !== undefined) { h.cash = h.csh2; delete h.csh2; }
+    if (h.adjPACW !== undefined) { h.adjEquity = h.adjPACW; delete h.adjPACW; }
+    if (h.adjCGT !== undefined) { h.adjBond = h.adjCGT; delete h.adjCGT; }
+    if (h.adjCSH2 !== undefined) { h.adjCash = h.adjCSH2; delete h.adjCSH2; }
+    if (h.dPACW !== undefined) { h.dEquity = h.dPACW; delete h.dPACW; }
+    if (h.dCGT !== undefined) { h.dBond = h.dCGT; delete h.dCGT; }
+    if (h.dCSH2 !== undefined) { h.dCash = h.dCSH2; delete h.dCSH2; }
+  });
+  return db;
 }
 
 function saveDecisionDB(db, preserveTimestamp) {
@@ -419,6 +436,10 @@ function getStressDB() {
     return db;
   }
   var db = JSON.parse(raw);
+  // Migrate old property names (pacwMin/cgtMin/csh2Target → equityMin/bondMin/cashTarget)
+  if (db.settings.pacwMin !== undefined) { db.settings.equityMin = db.settings.pacwMin; delete db.settings.pacwMin; }
+  if (db.settings.cgtMin !== undefined) { db.settings.bondMin = db.settings.cgtMin; delete db.settings.cgtMin; }
+  if (db.settings.csh2Target !== undefined) { db.settings.cashTarget = db.settings.csh2Target; delete db.settings.csh2Target; }
   // Migrate old settings without HODL
   if (db.settings.hodlEnabled === undefined) db.settings.hodlEnabled = false;
   if (db.settings.hodlValue === undefined) db.settings.hodlValue = 25000;
