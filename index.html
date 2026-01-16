@@ -570,7 +570,10 @@ function calcSIPPDraw(s, year, cumInf, yearlyInflation) {
   // Tax thresholds
   var pa = s.taxMode === 'frozen' ? s.pa : s.pa * cumInf;
   var brl = s.taxMode === 'frozen' ? s.brl : s.brl * cumInf;
-  
+
+  // Target salary (inflation-adjusted)
+  var target = s.baseSalary * cumInf;
+
   // Other: CPI capped at 4%
   var otherInf = 1;
   for (var y = 0; y < year; y++) {
@@ -578,13 +581,15 @@ function calcSIPPDraw(s, year, cumInf, yearlyInflation) {
     otherInf *= (1 + Math.min(yInf, 0.04));
   }
   var other = s.other * otherInf;
-  
+
   // State pension: full CPI
   var statePension = year >= s.statePensionYear ? s.statePension * cumInf : 0;
-  
-  // SIPP draw fills remaining BRL space
-  var sippDraw = Math.max(0, brl - other - statePension);
-  
+
+  // SIPP draw: fill to target salary or BRL, whichever is lower
+  // Never exceed BRL (stay in basic rate), but also don't exceed target
+  var maxGross = Math.min(target, brl);
+  var sippDraw = Math.max(0, maxGross - other - statePension);
+
   return { pa: pa, brl: brl, other: other, statePension: statePension, sippDraw: sippDraw };
 }
 
@@ -751,25 +756,23 @@ function calcDecision(dateStr, pacw, cgt, csh2, db) {
   {
     var target = s.baseSalary * cumInf;
     var other = OTHER + STATE;
-    var maxSipp = Math.max(0, BRL - other);
-    
+
     // Calculate net from gross using proper tax bands
     function grossToNet(gross, pa, brl) {
       if (gross <= pa) return gross;
       if (gross <= brl) return pa + (gross - pa) * 0.8;
       return pa + (brl - pa) * 0.8 + (gross - brl) * 0.6;
     }
-    
+
     var targetNet = grossToNet(target, PA, BRL);
-    
-    // Net from SIPP+Other+State at BRL (max we can draw tax-efficiently)
-    var maxTaxableGross = BRL;
-    var netAtBRL = grossToNet(maxTaxableGross, PA, BRL);
-    
-    // ISA needed = target net - net from taxable pensions
-    // SIPP draw fills up to BRL, so gross taxable = BRL
-    var stdSipp = maxSipp;
-    var stdIsa = Math.max(0, targetNet - netAtBRL);
+
+    // SIPP draw: fill to target or BRL, whichever is lower
+    var maxGross = Math.min(target, BRL);
+    var stdSipp = Math.max(0, maxGross - other);
+
+    // ISA only needed if target exceeds BRL (to make up net shortfall)
+    var netAtMaxGross = grossToNet(Math.min(other + stdSipp, BRL), PA, BRL);
+    var stdIsa = Math.max(0, targetNet - netAtMaxGross);
     
     if (inProtection) {
       sipp = (stdSipp / 12) * (1 - s.protectionFactor / 100);
