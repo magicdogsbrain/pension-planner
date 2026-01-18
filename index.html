@@ -83,6 +83,24 @@
     .warning-box { background: rgba(240,198,116,0.1); border: 1px solid rgba(240,198,116,0.3); border-radius: 8px; padding: 16px; margin: 16px 0; font-size: 13px; }
     .input-warning { background: rgba(240,198,116,0.1); border: 1px solid rgba(240,198,116,0.3); border-radius: 6px; padding: 10px 14px; margin: -10px 0 20px 0; font-size: 12px; color: var(--warning); }
     .input-warning.hidden { display: none; }
+    /* Setup Wizard Styles */
+    .wizard-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+    .wizard-overlay.hidden { display: none; }
+    .wizard-box { background: var(--card); border-radius: 16px; padding: 32px; max-width: 600px; width: 90%; max-height: 85vh; overflow-y: auto; border: 1px solid var(--border); }
+    .wizard-title { font-size: 24px; font-weight: 500; color: var(--primary); margin-bottom: 8px; }
+    .wizard-subtitle { font-size: 14px; color: var(--text-muted); margin-bottom: 24px; }
+    .wizard-step { margin-bottom: 24px; }
+    .wizard-step-title { font-size: 16px; font-weight: 500; margin-bottom: 8px; color: var(--text); }
+    .wizard-step-desc { font-size: 14px; color: var(--text-muted); margin-bottom: 12px; line-height: 1.5; }
+    .wizard-input { display: flex; align-items: center; gap: 12px; }
+    .wizard-input input, .wizard-input select { flex: 1; max-width: 200px; }
+    .wizard-input .unit { color: var(--text-muted); font-size: 13px; }
+    .wizard-buttons { display: flex; gap: 12px; margin-top: 24px; justify-content: space-between; }
+    .wizard-progress { display: flex; gap: 6px; margin-bottom: 24px; }
+    .wizard-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); }
+    .wizard-dot.active { background: var(--primary); }
+    .wizard-dot.done { background: var(--success); }
+    .wizard-example { background: rgba(0,0,0,0.2); border-radius: 6px; padding: 10px 14px; font-size: 13px; color: var(--text-muted); margin-top: 8px; }
   </style>
 </head>
 <body>
@@ -238,7 +256,7 @@
           <div><label>Target Gross Salary (£)</label><input type="number" id="ssBaseSalary" value="30000"></div>
         </div>
         <div class="info-box">
-          <strong>💰 Target:</strong> The gross annual income target for SIPP withdrawals. Draws will fill up to this amount (or Basic Rate Limit, whichever is lower).
+          <strong>💰 Target:</strong> The total yearly income you want from all sources (like a salary). This combines your SIPP withdrawals, other pensions, and state pension to reach this total.
         </div>
 
         <h3>Fund Minimums (Year 0, real terms)</h3>
@@ -260,16 +278,17 @@
           <div>
             <label>Tax Threshold Mode</label>
             <select id="ssTaxMode">
-              <option value="frozen">Frozen (Pessimistic)</option>
               <option value="inflates">Inflates with CPI</option>
+              <option value="frozen">Frozen</option>
             </select>
           </div>
         </div>
         <div class="warning-box">
-          <strong>💷 SIPP Draw = BRL - Other - State Pension</strong><br>
-          Fills basic rate band exactly (stays below 40% tax).<br>
-          <strong>Frozen:</strong> Fiscal drag squeezes SIPP allowance over time.<br>
-          <strong>Inflates:</strong> SIPP draw maintains purchasing power.
+          <strong>💷 How SIPP withdrawals are calculated:</strong><br>
+          SIPP Draw = Target Income - Other Pensions - State Pension<br>
+          (But never more than the Basic Rate Limit, to avoid 40% tax)<br><br>
+          <strong>Frozen:</strong> Tax thresholds stay the same each year - you pay more tax over time as inflation rises.<br>
+          <strong>Inflates:</strong> Tax thresholds rise with inflation - your spending power stays the same.
         </div>
         
         <h3>Other Pensions (Year 0)</h3>
@@ -435,7 +454,7 @@ function getStressDB() {
       settings: {
         equityMin: 250000, bondMin: 200000, cashTarget: 50000, duration: 30,
         baseSalary: 30000,
-        pa: 12570, brl: 50270, hrl: 125140, taxMode: 'frozen',
+        pa: 12570, brl: 50270, hrl: 125140, taxMode: 'inflates',
         other: 0, statePension: 12000, statePensionYear: 12,
         protectionMult: 0.8, consecutiveLimit: 3, disableProtection: false,
         hodlEnabled: false, hodlValue: 25000
@@ -3425,6 +3444,374 @@ function handleRestoreStress(input) {
   };
   reader.readAsText(file);
 }
+
+// ========== SETUP WIZARDS ==========
+var WIZARD_KEY = 'pension_wizard_done';
+
+function getWizardStatus() {
+  try {
+    return JSON.parse(localStorage.getItem(WIZARD_KEY)) || {};
+  } catch(e) { return {}; }
+}
+
+function setWizardDone(type) {
+  var status = getWizardStatus();
+  status[type] = true;
+  localStorage.setItem(WIZARD_KEY, JSON.stringify(status));
+}
+
+function showStressWizard() {
+  document.getElementById('stressWizardOverlay').classList.remove('hidden');
+  showStressWizardStep(1);
+}
+
+function hideStressWizard() {
+  document.getElementById('stressWizardOverlay').classList.add('hidden');
+}
+
+function showStressWizardStep(step) {
+  var totalSteps = 6;
+  for (var i = 1; i <= totalSteps; i++) {
+    var el = document.getElementById('stressWizardStep' + i);
+    if (el) el.classList.add('hidden');
+    var dot = document.getElementById('stressWizardDot' + i);
+    if (dot) {
+      dot.classList.remove('active', 'done');
+      if (i < step) dot.classList.add('done');
+      if (i === step) dot.classList.add('active');
+    }
+  }
+  var current = document.getElementById('stressWizardStep' + step);
+  if (current) current.classList.remove('hidden');
+}
+
+function finishStressWizard() {
+  // Copy wizard values to settings
+  document.getElementById('ssBaseSalary').value = document.getElementById('wizBaseSalary').value;
+  document.getElementById('ssOther').value = document.getElementById('wizOther').value;
+  document.getElementById('ssStatePension').value = document.getElementById('wizStatePension').value;
+  document.getElementById('ssStatePensionYear').value = document.getElementById('wizStatePensionYear').value;
+  document.getElementById('ssEquityMin').value = document.getElementById('wizEquityMin').value;
+  document.getElementById('ssBondMin').value = document.getElementById('wizBondMin').value;
+  document.getElementById('ssCashTarget').value = document.getElementById('wizCashTarget').value;
+  document.getElementById('ssDuration').value = document.getElementById('wizDuration').value;
+  document.getElementById('ssTaxMode').value = document.getElementById('wizTaxMode').value;
+
+  saveStressSettings();
+  setWizardDone('stress');
+  hideStressWizard();
+}
+
+function showDecisionWizard() {
+  document.getElementById('decisionWizardOverlay').classList.remove('hidden');
+  showDecisionWizardStep(1);
+}
+
+function hideDecisionWizard() {
+  document.getElementById('decisionWizardOverlay').classList.add('hidden');
+}
+
+function showDecisionWizardStep(step) {
+  var totalSteps = 4;
+  for (var i = 1; i <= totalSteps; i++) {
+    var el = document.getElementById('decisionWizardStep' + i);
+    if (el) el.classList.add('hidden');
+    var dot = document.getElementById('decisionWizardDot' + i);
+    if (dot) {
+      dot.classList.remove('active', 'done');
+      if (i < step) dot.classList.add('done');
+      if (i === step) dot.classList.add('active');
+    }
+  }
+  var current = document.getElementById('decisionWizardStep' + step);
+  if (current) current.classList.remove('hidden');
+}
+
+function finishDecisionWizard() {
+  // Copy wizard values to settings
+  document.getElementById('dsBaseSalary').value = document.getElementById('wizDBaseSalary').value;
+  document.getElementById('dsEquityMin').value = document.getElementById('wizDEquityMin').value;
+  document.getElementById('dsBondMin').value = document.getElementById('wizDBondMin').value;
+  document.getElementById('dsCashTarget').value = document.getElementById('wizDCashTarget').value;
+  document.getElementById('dsDuration').value = document.getElementById('wizDDuration').value;
+
+  saveDecisionSettings();
+  setWizardDone('decision');
+  hideDecisionWizard();
+}
+
+// Auto-show wizard on first visit to settings
+var origLoadStressSettings = loadStressSettings;
+loadStressSettings = function() {
+  origLoadStressSettings();
+  var status = getWizardStatus();
+  if (!status.stress) {
+    showStressWizard();
+  }
+};
+
+var origLoadDecisionSettings = loadDecisionSettings;
+loadDecisionSettings = function() {
+  origLoadDecisionSettings();
+  var status = getWizardStatus();
+  if (!status.decision) {
+    showDecisionWizard();
+  }
+};
 </script>
+
+<!-- Stress Tester Setup Wizard -->
+<div id="stressWizardOverlay" class="wizard-overlay hidden">
+  <div class="wizard-box">
+    <div class="wizard-title">Welcome to Stress Tester Setup</div>
+    <div class="wizard-subtitle">Let's set up your pension simulation in a few simple steps.</div>
+    <div class="wizard-progress">
+      <div id="stressWizardDot1" class="wizard-dot active"></div>
+      <div id="stressWizardDot2" class="wizard-dot"></div>
+      <div id="stressWizardDot3" class="wizard-dot"></div>
+      <div id="stressWizardDot4" class="wizard-dot"></div>
+      <div id="stressWizardDot5" class="wizard-dot"></div>
+      <div id="stressWizardDot6" class="wizard-dot"></div>
+    </div>
+
+    <!-- Step 1: Target Income -->
+    <div id="stressWizardStep1" class="wizard-step">
+      <div class="wizard-step-title">How much money do you want each year?</div>
+      <div class="wizard-step-desc">
+        Think of this as your "salary" in retirement. This is the total amount before tax that you want to receive each year from all your pension sources combined.
+      </div>
+      <div class="wizard-input">
+        <span class="unit">£</span>
+        <input type="number" id="wizBaseSalary" value="30000">
+        <span class="unit">per year</span>
+      </div>
+      <div class="wizard-example">
+        <strong>Example:</strong> If you want £2,500 per month, enter £30,000 here.
+      </div>
+      <div class="wizard-buttons">
+        <button class="secondary" onclick="hideStressWizard()">Skip Setup</button>
+        <button onclick="showStressWizardStep(2)">Next →</button>
+      </div>
+    </div>
+
+    <!-- Step 2: Other Income -->
+    <div id="stressWizardStep2" class="wizard-step hidden">
+      <div class="wizard-step-title">Do you have other pension income?</div>
+      <div class="wizard-step-desc">
+        Enter any other guaranteed pension income you'll receive (like a workplace defined benefit pension). This is separate from the funds you're testing.
+      </div>
+      <div class="wizard-input">
+        <span class="unit">£</span>
+        <input type="number" id="wizOther" value="0">
+        <span class="unit">per year</span>
+      </div>
+      <div class="wizard-example">
+        <strong>Example:</strong> If you have a company pension paying £5,000/year, enter £5,000.
+      </div>
+      <div class="wizard-buttons">
+        <button class="secondary" onclick="showStressWizardStep(1)">← Back</button>
+        <button onclick="showStressWizardStep(3)">Next →</button>
+      </div>
+    </div>
+
+    <!-- Step 3: State Pension -->
+    <div id="stressWizardStep3" class="wizard-step hidden">
+      <div class="wizard-step-title">What about the State Pension?</div>
+      <div class="wizard-step-desc">
+        The full State Pension is currently about £12,000 per year. When do you expect to start receiving it?
+      </div>
+      <div class="wizard-input" style="margin-bottom: 12px;">
+        <span class="unit">£</span>
+        <input type="number" id="wizStatePension" value="12000">
+        <span class="unit">per year</span>
+      </div>
+      <div class="wizard-input">
+        <span class="unit">Starting in year</span>
+        <input type="number" id="wizStatePensionYear" value="12" style="max-width: 80px;">
+        <span class="unit">of retirement</span>
+      </div>
+      <div class="wizard-example">
+        <strong>Example:</strong> If you're retiring at 55 and get State Pension at 67, enter year 12.
+      </div>
+      <div class="wizard-buttons">
+        <button class="secondary" onclick="showStressWizardStep(2)">← Back</button>
+        <button onclick="showStressWizardStep(4)">Next →</button>
+      </div>
+    </div>
+
+    <!-- Step 4: Fund Sizes -->
+    <div id="stressWizardStep4" class="wizard-step hidden">
+      <div class="wizard-step-title">How big are your pension funds?</div>
+      <div class="wizard-step-desc">
+        Enter the minimum amount you want to keep in each type of investment at the start of retirement. The simulation will try to stay above these levels.
+      </div>
+      <div class="grid grid-3" style="gap: 12px;">
+        <div>
+          <label style="font-size: 12px;">Stocks/Shares (Higher Risk)</label>
+          <div class="wizard-input"><span class="unit">£</span><input type="number" id="wizEquityMin" value="250000"></div>
+        </div>
+        <div>
+          <label style="font-size: 12px;">Bonds (Medium Risk)</label>
+          <div class="wizard-input"><span class="unit">£</span><input type="number" id="wizBondMin" value="200000"></div>
+        </div>
+        <div>
+          <label style="font-size: 12px;">Cash (Low Risk)</label>
+          <div class="wizard-input"><span class="unit">£</span><input type="number" id="wizCashTarget" value="50000"></div>
+        </div>
+      </div>
+      <div class="wizard-example">
+        <strong>Tip:</strong> These are target minimums. The simulation draws from stocks/bonds first and keeps cash as an emergency buffer.
+      </div>
+      <div class="wizard-buttons">
+        <button class="secondary" onclick="showStressWizardStep(3)">← Back</button>
+        <button onclick="showStressWizardStep(5)">Next →</button>
+      </div>
+    </div>
+
+    <!-- Step 5: Duration -->
+    <div id="stressWizardStep5" class="wizard-step hidden">
+      <div class="wizard-step-title">How long should your money last?</div>
+      <div class="wizard-step-desc">
+        How many years of retirement do you want to plan for? This should cover from now until you expect to no longer need the money.
+      </div>
+      <div class="wizard-input">
+        <input type="number" id="wizDuration" value="35" style="max-width: 100px;">
+        <span class="unit">years</span>
+      </div>
+      <div class="wizard-example">
+        <strong>Example:</strong> If you're 55 and want money until age 90, enter 35 years.
+      </div>
+      <div class="wizard-buttons">
+        <button class="secondary" onclick="showStressWizardStep(4)">← Back</button>
+        <button onclick="showStressWizardStep(6)">Next →</button>
+      </div>
+    </div>
+
+    <!-- Step 6: Tax Mode -->
+    <div id="stressWizardStep6" class="wizard-step hidden">
+      <div class="wizard-step-title">One last thing: Tax thresholds</div>
+      <div class="wizard-step-desc">
+        Will the government raise tax thresholds with inflation, or keep them frozen? "Frozen" is more pessimistic (you pay more tax over time).
+      </div>
+      <div class="wizard-input">
+        <select id="wizTaxMode">
+          <option value="inflates">Rise with inflation (optimistic)</option>
+          <option value="frozen">Stay frozen (pessimistic)</option>
+        </select>
+      </div>
+      <div class="wizard-example">
+        <strong>Tip:</strong> If unsure, "Rise with inflation" is a reasonable middle-ground assumption.
+      </div>
+      <div class="wizard-buttons">
+        <button class="secondary" onclick="showStressWizardStep(5)">← Back</button>
+        <button onclick="finishStressWizard()">Finish Setup ✓</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Decision Tool Setup Wizard -->
+<div id="decisionWizardOverlay" class="wizard-overlay hidden">
+  <div class="wizard-box">
+    <div class="wizard-title">Welcome to Decision Tool Setup</div>
+    <div class="wizard-subtitle">Let's configure your monthly drawdown tracking.</div>
+    <div class="wizard-progress">
+      <div id="decisionWizardDot1" class="wizard-dot active"></div>
+      <div id="decisionWizardDot2" class="wizard-dot"></div>
+      <div id="decisionWizardDot3" class="wizard-dot"></div>
+      <div id="decisionWizardDot4" class="wizard-dot"></div>
+    </div>
+
+    <!-- Step 1: Target Income -->
+    <div id="decisionWizardStep1" class="wizard-step">
+      <div class="wizard-step-title">How much money do you want each year?</div>
+      <div class="wizard-step-desc">
+        This is your target "salary" from your pension. The tool will calculate how much to withdraw from your SIPP each month to reach this goal.
+      </div>
+      <div class="wizard-input">
+        <span class="unit">£</span>
+        <input type="number" id="wizDBaseSalary" value="30000">
+        <span class="unit">per year (before tax)</span>
+      </div>
+      <div class="wizard-example">
+        <strong>Example:</strong> If you want about £2,000 per month after tax, you might need £30,000 gross.
+      </div>
+      <div class="wizard-buttons">
+        <button class="secondary" onclick="hideDecisionWizard()">Skip Setup</button>
+        <button onclick="showDecisionWizardStep(2)">Next →</button>
+      </div>
+    </div>
+
+    <!-- Step 2: Fund Minimums -->
+    <div id="decisionWizardStep2" class="wizard-step hidden">
+      <div class="wizard-step-title">What are your fund size targets?</div>
+      <div class="wizard-step-desc">
+        Enter the minimum you want in each fund at the start of retirement. The tool uses these to decide when to enter "protection mode" if markets fall.
+      </div>
+      <div class="grid grid-3" style="gap: 12px;">
+        <div>
+          <label style="font-size: 12px;">Stocks/Shares</label>
+          <div class="wizard-input"><span class="unit">£</span><input type="number" id="wizDEquityMin" value="250000"></div>
+        </div>
+        <div>
+          <label style="font-size: 12px;">Bonds</label>
+          <div class="wizard-input"><span class="unit">£</span><input type="number" id="wizDBondMin" value="200000"></div>
+        </div>
+        <div>
+          <label style="font-size: 12px;">Cash</label>
+          <div class="wizard-input"><span class="unit">£</span><input type="number" id="wizDCashTarget" value="50000"></div>
+        </div>
+      </div>
+      <div class="wizard-example">
+        <strong>Protection Mode:</strong> If your growth funds drop below these minimums, the tool recommends drawing from cash instead.
+      </div>
+      <div class="wizard-buttons">
+        <button class="secondary" onclick="showDecisionWizardStep(1)">← Back</button>
+        <button onclick="showDecisionWizardStep(3)">Next →</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Duration -->
+    <div id="decisionWizardStep3" class="wizard-step hidden">
+      <div class="wizard-step-title">How long should your money last?</div>
+      <div class="wizard-step-desc">
+        The fund minimums will gradually reduce to zero over this period. This is your "depletion curve."
+      </div>
+      <div class="wizard-input">
+        <input type="number" id="wizDDuration" value="35" style="max-width: 100px;">
+        <span class="unit">years</span>
+      </div>
+      <div class="wizard-example">
+        <strong>Example:</strong> If you're 55 and planning to age 90, enter 35 years.
+      </div>
+      <div class="wizard-buttons">
+        <button class="secondary" onclick="showDecisionWizardStep(2)">← Back</button>
+        <button onclick="showDecisionWizardStep(4)">Next →</button>
+      </div>
+    </div>
+
+    <!-- Step 4: Summary -->
+    <div id="decisionWizardStep4" class="wizard-step hidden">
+      <div class="wizard-step-title">You're all set!</div>
+      <div class="wizard-step-desc">
+        The Decision Tool will now help you track monthly withdrawals. Each month, enter your current fund values and it will tell you:
+      </div>
+      <ul style="color: var(--text-muted); font-size: 14px; line-height: 1.8; margin: 16px 0;">
+        <li>How much to withdraw from your SIPP</li>
+        <li>Whether you need ISA top-up</li>
+        <li>Which fund to take money from</li>
+        <li>Whether to enter protection mode</li>
+      </ul>
+      <div class="wizard-example">
+        <strong>Next Step:</strong> Go to "Tax Years" to set up your personal tax details (allowance, other income, state pension dates).
+      </div>
+      <div class="wizard-buttons">
+        <button class="secondary" onclick="showDecisionWizardStep(3)">← Back</button>
+        <button onclick="finishDecisionWizard()">Finish Setup ✓</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
