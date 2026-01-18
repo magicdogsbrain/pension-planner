@@ -768,6 +768,28 @@ function showDecisionTab(tab) {
   if (tab === 'taxyears') renderTaxYears();
   if (tab === 'history') renderHistory();
   if (tab === 'settings') loadDecisionSettings();
+  if (tab === 'entry') prefillDecisionEntry();
+}
+
+// Pre-fill decision entry inputs from settings
+var lastKnownDecisionSettings = null;
+function prefillDecisionEntry() {
+  var s = getDecisionDB().settings;
+  var equityEl = document.getElementById('entryEquity');
+  var bondEl = document.getElementById('entryBond');
+  var cashEl = document.getElementById('entryCash');
+
+  // Check if settings have changed
+  var currentSettingsKey = s.equityMin + '|' + s.bondMin + '|' + s.cashTarget;
+  var settingsChanged = lastKnownDecisionSettings !== currentSettingsKey;
+
+  // Pre-fill if empty or if settings changed
+  if (!equityEl.value || settingsChanged) {
+    equityEl.value = s.equityMin;
+    bondEl.value = s.bondMin;
+    cashEl.value = s.cashTarget;
+    lastKnownDecisionSettings = currentSettingsKey;
+  }
 }
 
 function showStressTab(tab) {
@@ -782,29 +804,47 @@ function showStressTab(tab) {
   if (tab === 'scenarios') { prefillStressInputs('scen'); checkStressInputs('scen'); }
 }
 
-// Pre-fill stress test inputs from settings (only if inputs are at default values)
-var stressInputsPrefilled = { mc: false, hist: false, scen: false };
+// Pre-fill stress test inputs from settings
+var lastKnownStressSettings = null;
 function prefillStressInputs(prefix) {
-  // Only pre-fill once per session, or if values are still at defaults
-  if (stressInputsPrefilled[prefix]) return;
-
   var s = getStressDB().settings;
   var equityEl = document.getElementById(prefix + 'Equity');
   var bondEl = document.getElementById(prefix + 'Bond');
   var cashEl = document.getElementById(prefix + 'Cash');
   var yearsEl = document.getElementById(prefix + 'Years');
 
+  // Check if settings have changed since last prefill
+  var currentSettingsKey = s.equityMin + '|' + s.bondMin + '|' + s.cashTarget + '|' + s.duration;
+  var settingsChanged = lastKnownStressSettings !== currentSettingsKey;
+
   // Check if at default values (250000/200000/50000/35)
   var atDefaults = +equityEl.value === 250000 && +bondEl.value === 200000 && +cashEl.value === 50000;
 
-  if (atDefaults) {
+  // Pre-fill if at defaults OR if settings have changed
+  if (atDefaults || settingsChanged) {
     equityEl.value = s.equityMin;
     bondEl.value = s.bondMin;
     cashEl.value = s.cashTarget;
     if (yearsEl) yearsEl.value = s.duration;
+    lastKnownStressSettings = currentSettingsKey;
   }
+}
 
-  stressInputsPrefilled[prefix] = true;
+// Force update all stress test inputs from settings
+function syncStressInputsFromSettings() {
+  var s = getStressDB().settings;
+  var prefixes = ['mc', 'hist', 'scen'];
+  prefixes.forEach(function(prefix) {
+    var equityEl = document.getElementById(prefix + 'Equity');
+    var bondEl = document.getElementById(prefix + 'Bond');
+    var cashEl = document.getElementById(prefix + 'Cash');
+    var yearsEl = document.getElementById(prefix + 'Years');
+    if (equityEl) equityEl.value = s.equityMin;
+    if (bondEl) bondEl.value = s.bondMin;
+    if (cashEl) cashEl.value = s.cashTarget;
+    if (yearsEl) yearsEl.value = s.duration;
+  });
+  lastKnownStressSettings = s.equityMin + '|' + s.bondMin + '|' + s.cashTarget + '|' + s.duration;
 }
 
 // Check if stress test inputs differ from settings minimums
@@ -1199,7 +1239,7 @@ function loadDecisionSettings() {
   document.getElementById('dsConsecutiveLimit').value = s.consecutiveLimit;
 }
 
-function saveDecisionSettings() {
+function saveDecisionSettings(silent) {
   var db = getDecisionDB();
   db.settings.equityMin = +document.getElementById('dsEquityMin').value;
   db.settings.bondMin = +document.getElementById('dsBondMin').value;
@@ -1209,7 +1249,10 @@ function saveDecisionSettings() {
   db.settings.protectionFactor = +document.getElementById('dsProtectionFactor').value;
   db.settings.recoveryBuffer = +document.getElementById('dsRecoveryBuffer').value;
   db.settings.consecutiveLimit = +document.getElementById('dsConsecutiveLimit').value;
-  saveDecisionDB(db); alert('Saved!');
+  saveDecisionDB(db);
+  // Reset prefill tracking so entry page gets updated values
+  lastKnownDecisionSettings = null;
+  if (!silent) alert('Saved!');
 }
 
 // STRESS TESTER
@@ -1456,6 +1499,22 @@ function simulate(config, returns, seed) {
 // ========== FUND ALLOCATION OPTIMISATION ==========
 var optimiseRunning = false;
 
+function applyOptimisedAllocation(equity, bond, cash) {
+  // Update stress settings
+  document.getElementById('ssEquityMin').value = equity;
+  document.getElementById('ssBondMin').value = bond;
+  document.getElementById('ssCashTarget').value = cash;
+  saveStressSettings(true);
+
+  // Also update decision settings to keep them in sync
+  document.getElementById('dsEquityMin').value = equity;
+  document.getElementById('dsBondMin').value = bond;
+  document.getElementById('dsCashTarget').value = cash;
+  saveDecisionSettings(true);
+
+  alert('Settings updated! The test inputs have been updated to match. Run the test again to see the full results.');
+}
+
 function runOptimisation(testType) {
   if (optimiseRunning) return;
   optimiseRunning = true;
@@ -1542,10 +1601,16 @@ function runOptimisation(testType) {
       }
 
       var fails = results.filter(function(r){return r.failed;});
+      var succ = results.filter(function(r){return !r.failed;});
       var rate = (results.length - fails.length) / results.length * 100;
       var protArr = results.map(function(r){return r.protMonths;});
       var avgProt = protArr.reduce(function(a,b){return a+b;}, 0) / results.length;
       var withProt = results.filter(function(r){return r.protMonths > 0;}).length;
+
+      // Calculate median final value for upside comparison
+      var finals = succ.map(function(r){return r.final;}).sort(function(a,b){return a-b;});
+      var medianFinal = finals.length > 0 ? finals[Math.floor(finals.length * 0.5)] : 0;
+      var p90Final = finals.length > 0 ? finals[Math.floor(finals.length * 0.9)] : 0;
 
       return {
         equity: alloc.equity,
@@ -1554,7 +1619,9 @@ function runOptimisation(testType) {
         rate: rate,
         avgProt: avgProt,
         withProt: withProt,
-        totalRuns: results.length
+        totalRuns: results.length,
+        medianFinal: medianFinal,
+        p90Final: p90Final
       };
     }
 
@@ -1564,7 +1631,9 @@ function runOptimisation(testType) {
     originalResult.avgProt = origSimResult.avgProt;
     originalResult.withProt = origSimResult.withProt;
     originalResult.totalRuns = origSimResult.totalRuns;
-    originalResult.rate = origSimResult.rate; // Use consistent simulation for comparison
+    originalResult.rate = origSimResult.rate;
+    originalResult.medianFinal = origSimResult.medianFinal;
+    originalResult.p90Final = origSimResult.p90Final;
 
     // Test each allocation - only consider if protection is not worse than original
     allocations.forEach(function(alloc) {
@@ -1582,6 +1651,10 @@ function runOptimisation(testType) {
     // Display results
     var h = '';
     if (bestResult && bestResult.rate > originalResult.rate) {
+      // Calculate upside difference
+      var medianDiff = bestResult.medianFinal - originalResult.medianFinal;
+      var medianDiffPct = originalResult.medianFinal > 0 ? (medianDiff / originalResult.medianFinal * 100) : 0;
+
       h += '<div class="card" style="margin-top:20px;border-color:var(--success);">';
       h += '<h3 style="color:var(--success);margin-top:0;">Better Allocation Found</h3>';
       h += '<p style="color:var(--text-muted);margin-bottom:16px;">A different fund split could improve your success rate without increasing protection usage:</p>';
@@ -1596,7 +1669,7 @@ function runOptimisation(testType) {
       h += '<div style="font-size:13px;">Equity: £' + originalResult.equity.toLocaleString() + ' (' + Math.round(originalResult.equity/totalFunds*100) + '%)</div>';
       h += '<div style="font-size:13px;">Bonds: £' + originalResult.bond.toLocaleString() + ' (' + Math.round(originalResult.bond/totalFunds*100) + '%)</div>';
       h += '<div style="font-size:13px;">Cash: £' + originalResult.cash.toLocaleString() + ' (' + Math.round(originalResult.cash/totalFunds*100) + '%)</div>';
-      h += '<div style="font-size:12px;color:var(--text-muted);margin-top:8px;">Avg protection: ' + originalResult.avgProt.toFixed(0) + ' months</div>';
+      h += '<div style="font-size:12px;color:var(--text-muted);margin-top:8px;">Avg protection: ' + originalResult.avgProt.toFixed(0) + ' mo | Median final: £' + (originalResult.medianFinal/1e6).toFixed(2) + 'M</div>';
       h += '</div>';
 
       // Optimised
@@ -1607,14 +1680,29 @@ function runOptimisation(testType) {
       h += '<div style="font-size:13px;">Equity: £' + bestResult.equity.toLocaleString() + ' (' + Math.round(bestResult.equity/totalFunds*100) + '%)</div>';
       h += '<div style="font-size:13px;">Bonds: £' + bestResult.bond.toLocaleString() + ' (' + Math.round(bestResult.bond/totalFunds*100) + '%)</div>';
       h += '<div style="font-size:13px;">Cash: £' + bestResult.cash.toLocaleString() + ' (' + Math.round(bestResult.cash/totalFunds*100) + '%)</div>';
-      h += '<div style="font-size:12px;color:var(--text-muted);margin-top:8px;">Avg protection: ' + bestResult.avgProt.toFixed(0) + ' months (same or less)</div>';
+      h += '<div style="font-size:12px;color:var(--text-muted);margin-top:8px;">Avg protection: ' + bestResult.avgProt.toFixed(0) + ' mo | Median final: £' + (bestResult.medianFinal/1e6).toFixed(2) + 'M</div>';
       h += '</div>';
 
       h += '</div>';
 
-      h += '<div class="info-box">';
-      h += '<strong>To try this allocation:</strong> Update your starting fund values in the inputs above to match the optimised split, then run the test again to see the full results.';
+      // Upside comparison
+      if (medianDiff < 0) {
+        h += '<div class="warning-box" style="margin-bottom:16px;">';
+        h += '<strong>Trade-off:</strong> The optimised allocation has a ' + Math.abs(medianDiffPct).toFixed(0) + '% lower median final value (£' + Math.abs(medianDiff/1000).toFixed(0) + 'k less). ';
+        h += 'This is because it likely has less equity exposure. You gain safety but may sacrifice some upside in good scenarios.';
+        h += '</div>';
+      } else if (medianDiff > 0) {
+        h += '<div class="info-box" style="margin-bottom:16px;">';
+        h += '<strong>Bonus:</strong> The optimised allocation also has a ' + medianDiffPct.toFixed(0) + '% higher median final value (£' + (medianDiff/1000).toFixed(0) + 'k more).';
+        h += '</div>';
+      }
+
+      h += '<div class="info-box" style="margin-bottom:16px;">';
+      h += '<strong>To apply this allocation:</strong> Click the button below to update your Settings with these new fund minimums. The test inputs will also update automatically.';
       h += '</div>';
+
+      // Store the optimised values for the apply button
+      h += '<button onclick="applyOptimisedAllocation(' + bestResult.equity + ',' + bestResult.bond + ',' + bestResult.cash + ')" style="width:100%;">Apply Optimised Allocation to Settings</button>';
       h += '</div>';
     } else {
       h += '<div class="card" style="margin-top:20px;border-color:var(--primary);">';
@@ -1765,6 +1853,20 @@ function runMonteCarlo() {
   var alertCls = rate >= 90 ? 'alert-success' : rate >= 80 ? 'alert-warning' : 'alert-danger';
   var alertMsg = rate >= 90 ? 'Excellent! Very high probability of success.' : rate >= 80 ? 'Good but some downside risk. Consider adjustments.' : 'Warning: Significant risk of depletion.';
   h += '<div class="alert ' + alertCls + '">' + alertMsg + '</div>';
+
+  // Info button for stat explanations
+  h += '<details style="margin-bottom:20px;"><summary style="cursor:pointer;color:var(--primary);font-size:14px;">ℹ️ What do these numbers mean?</summary>';
+  h += '<div class="info-box" style="margin-top:12px;font-size:13px;line-height:1.7;">';
+  h += '<p><strong>Success Rate:</strong> Percentage of simulations where your money lasted the full period without running out.</p>';
+  h += '<p><strong>Failures:</strong> Number of simulations where funds were depleted before the end.</p>';
+  h += '<p><strong>10th %ile Years:</strong> In the worst 10% of scenarios, your money lasted at least this many years.</p>';
+  h += '<p><strong>Median Final:</strong> The middle outcome - half of successful runs ended with more than this, half with less.</p>';
+  h += '<p><strong>Runs w/ Protection:</strong> How many simulations needed to enter "protection mode" (drawing from cash instead of growth funds when markets are down).</p>';
+  h += '<p><strong>Avg Protection Mo:</strong> Average number of months spent in protection mode across all runs.</p>';
+  h += '<p><strong>Max Protection Mo:</strong> The worst-case scenario - the most months any single run spent in protection mode.</p>';
+  h += '<p><strong>Max Consec:</strong> Maximum consecutive months in protection mode in any run. Long consecutive periods (e.g. 24+ months) mean your cash buffer needs to last through extended downturns.</p>';
+  h += '<p><strong>10th/90th %ile Final:</strong> In successful runs, the bottom 10% ended with less than the 10th percentile, and the top 10% ended with more than the 90th percentile.</p>';
+  h += '</div></details>';
   
   h += '<div class="chart-container"><div class="chart-title">Cone of Uncertainty (5th-95th Percentile)</div><canvas id="coneChart" width="1100" height="400"></canvas>';
   h += '<div class="legend"><div class="legend-item"><div class="legend-dot" style="background:rgba(240,198,116,0.15);"></div> 5-95%</div><div class="legend-item"><div class="legend-dot" style="background:rgba(240,198,116,0.2);"></div> 10-90%</div><div class="legend-item"><div class="legend-dot" style="background:rgba(240,198,116,0.35);"></div> 25-75%</div><div class="legend-item"><div class="legend-dot" style="background:#f0c674;"></div> Median</div><div class="legend-item"><div class="legend-dot" style="background:#7eb8da;"></div> Glidepath Min</div><div class="legend-item"><div class="legend-dot" style="background:rgba(248,81,73,0.6);"></div> 10th %ile</div></div></div>';
@@ -2940,7 +3042,7 @@ function loadStressSettings() {
   document.getElementById('ssHodlValue').value = s.hodlValue || 25000;
 }
 
-function saveStressSettings() {
+function saveStressSettings(silent) {
   var db = getStressDB();
   db.settings.baseSalary = +document.getElementById('ssBaseSalary').value;
   db.settings.equityMin = +document.getElementById('ssEquityMin').value;
@@ -2960,7 +3062,8 @@ function saveStressSettings() {
   db.settings.hodlEnabled = document.getElementById('ssHodlEnabled').checked;
   db.settings.hodlValue = +document.getElementById('ssHodlValue').value;
   saveStressDB(db);
-  alert('Saved!');
+  syncStressInputsFromSettings();
+  if (!silent) alert('Saved!');
 }
 
 function exportHistoryCSV() {
@@ -3863,7 +3966,7 @@ function finishStressWizard() {
   document.getElementById('ssDuration').value = document.getElementById('wizDuration').value;
   document.getElementById('ssTaxMode').value = document.getElementById('wizTaxMode').value;
 
-  saveStressSettings();
+  saveStressSettings(true);
   setWizardDone('stress');
   hideStressWizard();
   // Now show decision wizard
@@ -3934,7 +4037,7 @@ function finishDecisionWizard() {
   document.getElementById('dsCashTarget').value = document.getElementById('wizDCashTarget').value;
   document.getElementById('dsDuration').value = document.getElementById('wizDDuration').value;
 
-  saveDecisionSettings();
+  saveDecisionSettings(true);
   setWizardDone('decision');
   hideDecisionWizard();
 }
@@ -4288,7 +4391,7 @@ window.addEventListener('DOMContentLoaded', function() {
 </div>
 
 <!-- Version display -->
-<div style="position:fixed;bottom:8px;right:12px;font-size:11px;color:rgba(255,255,255,0.25);pointer-events:none;z-index:1;">V60</div>
+<div style="position:fixed;bottom:8px;right:12px;font-size:11px;color:rgba(255,255,255,0.25);pointer-events:none;z-index:1;">V61</div>
 
 </body>
 </html>

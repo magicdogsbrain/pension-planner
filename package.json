@@ -1,6 +1,6 @@
 {
   "name": "pension-planner",
-  "version": "6.0.0",
+  "version": "6.1.0",
   "description": "Pension Drawdown Planning Tool with Monte Carlo Stress Testing",
   "main": "main.js",
   "scripts": {
