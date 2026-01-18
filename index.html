@@ -8,8 +8,9 @@
   <meta name="apple-mobile-web-app-title" content="Pension Planner">
   <meta name="theme-color" content="#0f0f1a">
   <meta name="description" content="Pension drawdown decision tool with Monte Carlo stress testing">
-  <link rel="manifest" href="data:application/json,{&quot;name&quot;:&quot;Pension Planner&quot;,&quot;short_name&quot;:&quot;Pension&quot;,&quot;start_url&quot;:&quot;.&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;%230f0f1a&quot;,&quot;theme_color&quot;:&quot;%230f0f1a&quot;,&quot;icons&quot;:[{&quot;src&quot;:&quot;data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%230f0f1a' width='100' height='100' rx='20'/><text x='50' y='65' text-anchor='middle' font-size='50'>💰</text></svg>&quot;,&quot;sizes&quot;:&quot;any&quot;,&quot;type&quot;:&quot;image/svg+xml&quot;}]}">
-  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%230f0f1a' width='100' height='100' rx='20'/><text x='50' y='65' text-anchor='middle' font-size='50'>💰</text></svg>">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <title>Pension Planner v1.0</title>
   <style>
     :root { --bg: #0f0f1a; --card: #1a1a2e; --card-alt: #16213e; --text: #e8e4dc; --text-muted: #8b8b9b; --primary: #f0c674; --success: #2ea043; --warning: #e1b12c; --danger: #f85149; --info: #7eb8da; --accent: #c77dff; --border: rgba(255,255,255,0.1); }
@@ -101,6 +102,113 @@
     .wizard-dot.active { background: var(--primary); }
     .wizard-dot.done { background: var(--success); }
     .wizard-example { background: rgba(0,0,0,0.2); border-radius: 6px; padding: 10px 14px; font-size: 13px; color: var(--text-muted); margin-top: 8px; }
+
+    /* Mobile-first responsive design */
+    @media (max-width: 600px) {
+      body { padding: 10px; }
+      .container { padding: 0; }
+
+      /* Main tabs - smaller on mobile */
+      .main-tabs { margin-bottom: 16px; }
+      .main-tab { padding: 14px 10px; font-size: 14px; }
+      .main-tab:first-child { border-radius: 8px 0 0 8px; }
+      .main-tab:last-child { border-radius: 0 8px 8px 0; }
+
+      /* Cards - less padding */
+      .card { padding: 16px; margin-bottom: 12px; border-radius: 10px; }
+      .card h2 { font-size: 15px; margin-bottom: 16px; }
+      .card h3 { font-size: 13px; margin: 16px 0 12px; }
+
+      /* Sub-tabs - wrap into grid on mobile for visibility */
+      .sub-tabs {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        padding-bottom: 8px;
+        margin-bottom: 16px;
+      }
+      .sub-tab {
+        padding: 12px 8px;
+        font-size: 11px;
+        white-space: nowrap;
+        text-align: center;
+        border: 1px solid var(--border);
+        background: var(--card);
+      }
+      .sub-tab.active {
+        background: rgba(240,198,116,0.2);
+        border-color: var(--primary);
+      }
+
+      /* All grids collapse to 1 column on small screens */
+      .grid-2, .grid-3, .grid-4, .grid-5, .grid-6, .grid-7 { grid-template-columns: 1fr; gap: 12px; }
+
+      /* Inputs - larger touch targets */
+      input, select { padding: 14px 12px; font-size: 16px; border-radius: 8px; }
+      label { font-size: 10px; margin-bottom: 4px; }
+
+      /* Buttons - full width on mobile */
+      button { width: 100%; padding: 16px 20px; font-size: 15px; border-radius: 8px; }
+      button.small { padding: 10px 14px; font-size: 13px; }
+      .button-row { display: flex; flex-direction: column; gap: 10px; }
+
+      /* Decision box */
+      .decision-box { padding: 16px; border-radius: 10px; }
+      .amount { font-size: 24px; }
+
+      /* Stats */
+      .stat-box { padding: 14px; border-radius: 8px; }
+      .stat-value { font-size: 24px; }
+      .stat-label { font-size: 10px; }
+
+      /* Tax breakdown */
+      .tax-breakdown { padding: 12px; }
+      .tax-row { font-size: 12px; padding: 5px 0; }
+
+      /* Charts - full width, shorter */
+      .chart-container { padding: 12px; margin: 12px 0; border-radius: 8px; overflow-x: auto; }
+      .chart-title { font-size: 11px; margin-bottom: 8px; }
+      canvas { height: 250px !important; min-width: 500px; }
+      .legend { gap: 12px; font-size: 11px; }
+
+      /* Tables - horizontal scroll */
+      .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      table { min-width: 500px; font-size: 12px; }
+      th, td { padding: 10px 8px; }
+
+      /* Scenario rows */
+      .scenario-row { grid-template-columns: 1.5fr 1fr 1fr 0.8fr; gap: 8px; padding: 10px 8px; font-size: 12px; }
+      .scenario-row.header { font-size: 10px; }
+
+      /* Info/warning boxes */
+      .info-box, .warning-box { padding: 12px; font-size: 12px; margin: 12px 0; }
+      .input-warning { padding: 8px 12px; font-size: 11px; margin: -6px 0 12px 0; }
+
+      /* Alerts */
+      .alert { padding: 12px 14px; font-size: 12px; }
+
+      /* History table adjustments */
+      .history-entry { font-size: 12px; }
+
+      /* Modal adjustments */
+      .modal-content { margin: 10px; padding: 20px; max-height: 90vh; overflow-y: auto; }
+    }
+
+    /* Medium screens (tablets) */
+    @media (min-width: 601px) and (max-width: 900px) {
+      body { padding: 16px; }
+      .grid-5, .grid-6, .grid-7 { grid-template-columns: repeat(3, 1fr); }
+      .grid-4 { grid-template-columns: repeat(2, 1fr); }
+      .card { padding: 20px; }
+      .stat-value { font-size: 28px; }
+      canvas { height: 300px !important; }
+    }
+
+    /* Touch-friendly improvements */
+    @media (hover: none) and (pointer: coarse) {
+      button, .sub-tab, .main-tab { min-height: 44px; }
+      input, select { min-height: 48px; }
+    }
   </style>
 </head>
 <body>
@@ -278,8 +386,8 @@
           <div>
             <label>Tax Threshold Mode</label>
             <select id="ssTaxMode">
-              <option value="inflates">Inflates with CPI</option>
-              <option value="frozen">Frozen</option>
+              <option value="inflates">Standard (rise with inflation)</option>
+              <option value="frozen">Frozen (stay at current levels)</option>
             </select>
           </div>
         </div>
@@ -288,7 +396,7 @@
           SIPP Draw = Target Income - Other Pensions - State Pension<br>
           (But never more than the Basic Rate Limit, to avoid 40% tax)<br><br>
           <strong>Frozen:</strong> Tax thresholds stay the same each year - you pay more tax over time as inflation rises.<br>
-          <strong>Inflates:</strong> Tax thresholds rise with inflation - your spending power stays the same.
+          <strong>Standard:</strong> Tax thresholds rise with inflation - your spending power stays the same.
         </div>
         
         <h3>Other Pensions (Year 0)</h3>
@@ -668,10 +776,35 @@ function showStressTab(tab) {
   event.target.classList.add('active');
   document.getElementById('stress-' + tab).classList.remove('hidden');
   if (tab === 'stresssettings') loadStressSettings();
-  // Check inputs when switching tabs
-  if (tab === 'montecarlo') checkStressInputs('mc');
-  if (tab === 'historical') checkStressInputs('hist');
-  if (tab === 'scenarios') checkStressInputs('scen');
+  // Pre-fill and check inputs when switching to test tabs
+  if (tab === 'montecarlo') { prefillStressInputs('mc'); checkStressInputs('mc'); }
+  if (tab === 'historical') { prefillStressInputs('hist'); checkStressInputs('hist'); }
+  if (tab === 'scenarios') { prefillStressInputs('scen'); checkStressInputs('scen'); }
+}
+
+// Pre-fill stress test inputs from settings (only if inputs are at default values)
+var stressInputsPrefilled = { mc: false, hist: false, scen: false };
+function prefillStressInputs(prefix) {
+  // Only pre-fill once per session, or if values are still at defaults
+  if (stressInputsPrefilled[prefix]) return;
+
+  var s = getStressDB().settings;
+  var equityEl = document.getElementById(prefix + 'Equity');
+  var bondEl = document.getElementById(prefix + 'Bond');
+  var cashEl = document.getElementById(prefix + 'Cash');
+  var yearsEl = document.getElementById(prefix + 'Years');
+
+  // Check if at default values (250000/200000/50000/35)
+  var atDefaults = +equityEl.value === 250000 && +bondEl.value === 200000 && +cashEl.value === 50000;
+
+  if (atDefaults) {
+    equityEl.value = s.equityMin;
+    bondEl.value = s.bondMin;
+    cashEl.value = s.cashTarget;
+    if (yearsEl) yearsEl.value = s.duration;
+  }
+
+  stressInputsPrefilled[prefix] = true;
 }
 
 // Check if stress test inputs differ from settings minimums
@@ -1320,6 +1453,184 @@ function simulate(config, returns, seed) {
   return { hist: hist, failed: failed, failMonth: failMonth, years: failed ? failMonth / 12 : config.years, final: equity + bond + cash, finalHodl: hodl, hodlUsed: hodlUsed, hodlUsedMonth: hodlUsedMonth, protMonths: protMonths, maxConsec: maxConsec, seed: seed };
 }
 
+// ========== FUND ALLOCATION OPTIMISATION ==========
+var optimiseRunning = false;
+
+function runOptimisation(testType) {
+  if (optimiseRunning) return;
+  optimiseRunning = true;
+
+  var btn = document.getElementById('optimiseBtn' + testType);
+  var resultsDiv = document.getElementById('optimiseResults' + testType);
+  if (btn) btn.disabled = true;
+  if (btn) btn.textContent = 'Optimising...';
+
+  // Get current fund values based on test type
+  var equityEl, bondEl, cashEl, yearsEl;
+  if (testType === 'MC') {
+    equityEl = document.getElementById('mcEquity');
+    bondEl = document.getElementById('mcBond');
+    cashEl = document.getElementById('mcCash');
+    yearsEl = document.getElementById('mcYears');
+  } else if (testType === 'Hist') {
+    equityEl = document.getElementById('histEquity');
+    bondEl = document.getElementById('histBond');
+    cashEl = document.getElementById('histCash');
+    yearsEl = document.getElementById('histYears');
+  }
+
+  var originalEquity = +equityEl.value;
+  var originalBond = +bondEl.value;
+  var originalCash = +cashEl.value;
+  var years = +yearsEl.value;
+  var totalFunds = originalEquity + originalBond + originalCash;
+
+  // Store original results for comparison
+  var originalRate = parseFloat(document.querySelector('#' + (testType === 'MC' ? 'mcResults' : 'histResults') + ' .stat-value').textContent);
+
+  // Use setTimeout to allow UI to update
+  setTimeout(function() {
+    var bestResult = null;
+    var originalResult = { equity: originalEquity, bond: originalBond, cash: originalCash, rate: originalRate, avgProt: 0, withProt: 0, totalRuns: 0 };
+
+    // Generate allocation combinations to test
+    // We'll test in 5% increments, keeping cash between 5-30% of total
+    var allocations = [];
+    for (var cashPct = 5; cashPct <= 30; cashPct += 5) {
+      for (var equityPct = 20; equityPct <= 95 - cashPct; equityPct += 5) {
+        var bondPct = 100 - cashPct - equityPct;
+        if (bondPct >= 0) {
+          allocations.push({
+            equity: Math.round(totalFunds * equityPct / 100),
+            bond: Math.round(totalFunds * bondPct / 100),
+            cash: Math.round(totalFunds * cashPct / 100)
+          });
+        }
+      }
+    }
+
+    var yrs = Object.keys(EQUITY_RETURNS).map(Number).sort(function(a,b){return a-b;});
+    var maxY = Math.max.apply(null, yrs);
+
+    // Helper function to run simulation for an allocation
+    function runSimForAlloc(alloc) {
+      var cfg = { equityStart: alloc.equity, bondStart: alloc.bond, cashStart: alloc.cash, years: years };
+      var results = [];
+
+      if (testType === 'MC') {
+        // Monte Carlo - run 500 iterations for speed
+        for (var i = 0; i < 500; i++) {
+          var rng = seededRng(i * 12345), ret = { equity: {}, inflation: {} };
+          for (var y = 0; y < years; y++) {
+            var ry = yrs[Math.floor(rng() * yrs.length)];
+            ret.equity[y] = EQUITY_RETURNS[ry];
+            ret.inflation[y] = INFLATION[ry] || 0.025;
+          }
+          results.push(simulate(cfg, ret, i));
+        }
+      } else {
+        // Historical - run all sequences
+        yrs.forEach(function(sy) {
+          if (sy + years - 1 > maxY) return;
+          var ret = { equity: {}, inflation: {} };
+          for (var y = 0; y < years; y++) {
+            ret.equity[y] = EQUITY_RETURNS[sy + y] || 0;
+            ret.inflation[y] = INFLATION[sy + y] || 0.025;
+          }
+          results.push(simulate(cfg, ret, sy));
+        });
+      }
+
+      var fails = results.filter(function(r){return r.failed;});
+      var rate = (results.length - fails.length) / results.length * 100;
+      var protArr = results.map(function(r){return r.protMonths;});
+      var avgProt = protArr.reduce(function(a,b){return a+b;}, 0) / results.length;
+      var withProt = results.filter(function(r){return r.protMonths > 0;}).length;
+
+      return {
+        equity: alloc.equity,
+        bond: alloc.bond,
+        cash: alloc.cash,
+        rate: rate,
+        avgProt: avgProt,
+        withProt: withProt,
+        totalRuns: results.length
+      };
+    }
+
+    // First, run the original allocation to get its protection stats
+    var origAlloc = { equity: originalEquity, bond: originalBond, cash: originalCash };
+    var origSimResult = runSimForAlloc(origAlloc);
+    originalResult.avgProt = origSimResult.avgProt;
+    originalResult.withProt = origSimResult.withProt;
+    originalResult.totalRuns = origSimResult.totalRuns;
+    originalResult.rate = origSimResult.rate; // Use consistent simulation for comparison
+
+    // Test each allocation - only consider if protection is not worse than original
+    allocations.forEach(function(alloc) {
+      var result = runSimForAlloc(alloc);
+
+      // Only consider this allocation if it doesn't use MORE protection than original
+      if (result.avgProt <= originalResult.avgProt) {
+        // Pick the one with highest success rate (among those with acceptable protection)
+        if (!bestResult || result.rate > bestResult.rate) {
+          bestResult = result;
+        }
+      }
+    });
+
+    // Display results
+    var h = '';
+    if (bestResult && bestResult.rate > originalResult.rate) {
+      h += '<div class="card" style="margin-top:20px;border-color:var(--success);">';
+      h += '<h3 style="color:var(--success);margin-top:0;">Better Allocation Found</h3>';
+      h += '<p style="color:var(--text-muted);margin-bottom:16px;">A different fund split could improve your success rate without increasing protection usage:</p>';
+
+      h += '<div class="grid grid-2" style="gap:20px;margin-bottom:20px;">';
+
+      // Original
+      h += '<div style="padding:16px;background:rgba(0,0,0,0.2);border-radius:8px;">';
+      h += '<div style="font-weight:500;margin-bottom:12px;color:var(--text-muted);">Your Current Split</div>';
+      h += '<div style="font-size:24px;font-weight:600;color:var(--warning);">' + originalResult.rate.toFixed(1) + '%</div>';
+      h += '<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">Success Rate</div>';
+      h += '<div style="font-size:13px;">Equity: £' + originalResult.equity.toLocaleString() + ' (' + Math.round(originalResult.equity/totalFunds*100) + '%)</div>';
+      h += '<div style="font-size:13px;">Bonds: £' + originalResult.bond.toLocaleString() + ' (' + Math.round(originalResult.bond/totalFunds*100) + '%)</div>';
+      h += '<div style="font-size:13px;">Cash: £' + originalResult.cash.toLocaleString() + ' (' + Math.round(originalResult.cash/totalFunds*100) + '%)</div>';
+      h += '<div style="font-size:12px;color:var(--text-muted);margin-top:8px;">Avg protection: ' + originalResult.avgProt.toFixed(0) + ' months</div>';
+      h += '</div>';
+
+      // Optimised
+      h += '<div style="padding:16px;background:rgba(46,160,67,0.1);border-radius:8px;border:1px solid var(--success);">';
+      h += '<div style="font-weight:500;margin-bottom:12px;color:var(--success);">Optimised Split</div>';
+      h += '<div style="font-size:24px;font-weight:600;color:var(--success);">' + bestResult.rate.toFixed(1) + '%</div>';
+      h += '<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">Success Rate (+' + (bestResult.rate - originalResult.rate).toFixed(1) + '%)</div>';
+      h += '<div style="font-size:13px;">Equity: £' + bestResult.equity.toLocaleString() + ' (' + Math.round(bestResult.equity/totalFunds*100) + '%)</div>';
+      h += '<div style="font-size:13px;">Bonds: £' + bestResult.bond.toLocaleString() + ' (' + Math.round(bestResult.bond/totalFunds*100) + '%)</div>';
+      h += '<div style="font-size:13px;">Cash: £' + bestResult.cash.toLocaleString() + ' (' + Math.round(bestResult.cash/totalFunds*100) + '%)</div>';
+      h += '<div style="font-size:12px;color:var(--text-muted);margin-top:8px;">Avg protection: ' + bestResult.avgProt.toFixed(0) + ' months (same or less)</div>';
+      h += '</div>';
+
+      h += '</div>';
+
+      h += '<div class="info-box">';
+      h += '<strong>To try this allocation:</strong> Update your starting fund values in the inputs above to match the optimised split, then run the test again to see the full results.';
+      h += '</div>';
+      h += '</div>';
+    } else {
+      h += '<div class="card" style="margin-top:20px;border-color:var(--primary);">';
+      h += '<h3 style="color:var(--primary);margin-top:0;">Your Allocation is Already Optimal</h3>';
+      h += '<p style="color:var(--text-muted);">We tested ' + allocations.length + ' different fund splits. Your current allocation achieves the best success rate (' + originalResult.rate.toFixed(1) + '%) without increasing protection usage.</p>';
+      h += '<p style="font-size:13px;color:var(--text-muted);">Your protection: ' + originalResult.avgProt.toFixed(0) + ' months average</p>';
+      h += '</div>';
+    }
+
+    if (resultsDiv) resultsDiv.innerHTML = h;
+    if (btn) btn.disabled = false;
+    if (btn) btn.textContent = 'Optimise Allocation';
+    optimiseRunning = false;
+  }, 50);
+}
+
 function runMonteCarlo() {
   var runs = 1000, samples = +document.getElementById('mcSampleLines').value || 100;
   var cfg = { equityStart: +document.getElementById('mcEquity').value, bondStart: +document.getElementById('mcBond').value, cashStart: +document.getElementById('mcCash').value, years: +document.getElementById('mcYears').value };
@@ -1472,12 +1783,20 @@ function runMonteCarlo() {
   
   // Add tooltip div
   h += '<div id="chartTooltip" style="display:none;position:fixed;background:rgba(30,30,30,0.95);border:1px solid #555;border-radius:6px;padding:10px 14px;font-size:12px;color:#fff;pointer-events:none;z-index:1000;max-width:280px;box-shadow:0 4px 12px rgba(0,0,0,0.4);"></div>';
-  
+
+  // Add optimise button
+  h += '<div style="margin-top:30px;padding-top:20px;border-top:1px solid var(--border);">';
+  h += '<h3 style="margin-top:0;margin-bottom:12px;">Optimise Fund Allocation</h3>';
+  h += '<p style="color:var(--text-muted);font-size:14px;margin-bottom:16px;">Test different splits of your total £' + (cfg.equityStart + cfg.bondStart + cfg.cashStart).toLocaleString() + ' across equity, bonds, and cash to find an allocation with a higher success rate.</p>';
+  h += '<button id="optimiseBtnMC" onclick="runOptimisation(\'MC\')" style="margin-bottom:16px;">Optimise Allocation</button>';
+  h += '<div id="optimiseResultsMC"></div>';
+  h += '</div>';
+
   document.getElementById('mcResults').innerHTML = h;
-  
+
   // Store data globally for tooltip access
   window.mcData = { runs: sampleRuns, years: cfg.years, start: cfg.equityStart + cfg.bondStart + cfg.cashStart, glide: glide, protArr: protArr, pctData: pctData };
-  
+
   drawCone(pctData, glide, cfg.years);
   drawTraj(sampleRuns, cfg.years, cfg.equityStart + cfg.bondStart + cfg.cashStart, glide);
   drawProt(protArr);
@@ -2045,6 +2364,14 @@ function runHistorical() {
     var eventStr = w.analysis.events.length > 0 ? ' (' + w.analysis.events[0].event + ')' : '';
     h += '<div class="scenario-row ' + (w.res.failed ? 'failed' : '') + '"><div><strong>' + w.start + '</strong>' + eventStr + '</div><div>' + w.res.years.toFixed(1) + ' yrs</div><div>' + w.res.protMonths + ' mo</div><div>' + (w.res.failed ? '❌' : '✅') + '</div></div>';
   });
+
+  // Add optimise button
+  h += '<div style="margin-top:30px;padding-top:20px;border-top:1px solid var(--border);">';
+  h += '<h3 style="margin-top:0;margin-bottom:12px;">Optimise Fund Allocation</h3>';
+  h += '<p style="color:var(--text-muted);font-size:14px;margin-bottom:16px;">Test different splits of your total £' + (cfg.equityStart + cfg.bondStart + cfg.cashStart).toLocaleString() + ' across equity, bonds, and cash to find an allocation with a higher success rate.</p>';
+  h += '<button id="optimiseBtnHist" onclick="runOptimisation(\'Hist\')" style="margin-bottom:16px;">Optimise Allocation</button>';
+  h += '<div id="optimiseResultsHist"></div>';
+  h += '</div>';
 
   document.getElementById('histResults').innerHTML = h;
 
@@ -2980,11 +3307,9 @@ window.onload = async function() {
 
   // Register service worker for PWA
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('data:text/javascript,' + encodeURIComponent(
-      "self.addEventListener('install', e => self.skipWaiting());" +
-      "self.addEventListener('activate', e => e.waitUntil(clients.claim()));" +
-      "self.addEventListener('fetch', e => e.respondWith(fetch(e.request).catch(() => caches.match(e.request))));"
-    )).catch(function() { /* SW registration failed, but app still works */ });
+    navigator.serviceWorker.register('./sw.js')
+      .then(function(reg) { console.log('Service worker registered'); })
+      .catch(function(err) { console.log('Service worker registration failed:', err); });
   }
 
   // beforeunload is not used - we handle exit via autoBackupOnExit called from main process
@@ -3460,6 +3785,47 @@ function setWizardDone(type) {
   localStorage.setItem(WIZARD_KEY, JSON.stringify(status));
 }
 
+// ========== INTRO WIZARD ==========
+function showIntroWizard() {
+  document.getElementById('introWizardOverlay').classList.remove('hidden');
+  showIntroWizardStep(1);
+}
+
+function hideIntroWizard() {
+  document.getElementById('introWizardOverlay').classList.add('hidden');
+}
+
+function showIntroWizardStep(step) {
+  var totalSteps = 2;
+  for (var i = 1; i <= totalSteps; i++) {
+    var el = document.getElementById('introWizardStep' + i);
+    if (el) el.classList.add('hidden');
+    var dot = document.getElementById('introWizardDot' + i);
+    if (dot) {
+      dot.classList.remove('active', 'done');
+      if (i < step) dot.classList.add('done');
+      if (i === step) dot.classList.add('active');
+    }
+  }
+  var current = document.getElementById('introWizardStep' + step);
+  if (current) current.classList.remove('hidden');
+}
+
+function finishIntroWizard() {
+  setWizardDone('intro');
+  hideIntroWizard();
+  // Now show stress wizard
+  showStressWizard();
+}
+
+function skipAllWizards() {
+  setWizardDone('intro');
+  setWizardDone('stress');
+  setWizardDone('decision');
+  hideIntroWizard();
+}
+
+// ========== STRESS TESTER WIZARD ==========
 function showStressWizard() {
   document.getElementById('stressWizardOverlay').classList.remove('hidden');
   showStressWizardStep(1);
@@ -3500,9 +3866,42 @@ function finishStressWizard() {
   saveStressSettings();
   setWizardDone('stress');
   hideStressWizard();
+  // Now show decision wizard
+  showDecisionWizard();
 }
 
+function skipStressWizard() {
+  setWizardDone('stress');
+  hideStressWizard();
+  // Still show decision wizard
+  showDecisionWizard();
+}
+
+// ========== DECISION TOOL WIZARD ==========
 function showDecisionWizard() {
+  // Pre-fill from stress wizard values if available
+  var wizBaseSalary = document.getElementById('wizBaseSalary');
+  var wizEquityMin = document.getElementById('wizEquityMin');
+  var wizBondMin = document.getElementById('wizBondMin');
+  var wizCashTarget = document.getElementById('wizCashTarget');
+  var wizDuration = document.getElementById('wizDuration');
+
+  if (wizBaseSalary && wizBaseSalary.value) {
+    document.getElementById('wizDBaseSalary').value = wizBaseSalary.value;
+  }
+  if (wizEquityMin && wizEquityMin.value) {
+    document.getElementById('wizDEquityMin').value = wizEquityMin.value;
+  }
+  if (wizBondMin && wizBondMin.value) {
+    document.getElementById('wizDBondMin').value = wizBondMin.value;
+  }
+  if (wizCashTarget && wizCashTarget.value) {
+    document.getElementById('wizDCashTarget').value = wizCashTarget.value;
+  }
+  if (wizDuration && wizDuration.value) {
+    document.getElementById('wizDDuration').value = wizDuration.value;
+  }
+
   document.getElementById('decisionWizardOverlay').classList.remove('hidden');
   showDecisionWizardStep(1);
 }
@@ -3540,30 +3939,105 @@ function finishDecisionWizard() {
   hideDecisionWizard();
 }
 
-// Auto-show wizard on first visit to settings
+function skipDecisionWizard() {
+  setWizardDone('decision');
+  hideDecisionWizard();
+}
+
+// Auto-show intro wizard on first visit
+function checkAndShowIntroWizard() {
+  var status = getWizardStatus();
+  if (!status.intro) {
+    showIntroWizard();
+  }
+}
+
+// Hook into app initialization - show intro wizard when app loads for first time
 var origLoadStressSettings = loadStressSettings;
 loadStressSettings = function() {
   origLoadStressSettings();
-  var status = getWizardStatus();
-  if (!status.stress) {
-    showStressWizard();
-  }
 };
 
 var origLoadDecisionSettings = loadDecisionSettings;
 loadDecisionSettings = function() {
   origLoadDecisionSettings();
-  var status = getWizardStatus();
-  if (!status.decision) {
-    showDecisionWizard();
-  }
 };
+
+// Show intro wizard on page load if not done
+window.addEventListener('DOMContentLoaded', function() {
+  // Small delay to let page render first
+  setTimeout(checkAndShowIntroWizard, 500);
+});
 </script>
+
+<!-- Introduction Wizard -->
+<div id="introWizardOverlay" class="wizard-overlay hidden">
+  <div class="wizard-box">
+    <div class="wizard-title">Welcome to Pension Planner</div>
+    <div class="wizard-subtitle">A tool to help you plan and manage your SIPP pension drawdown</div>
+    <div class="wizard-progress">
+      <div id="introWizardDot1" class="wizard-dot active"></div>
+      <div id="introWizardDot2" class="wizard-dot"></div>
+    </div>
+
+    <!-- Intro Step 1: What is this app? -->
+    <div id="introWizardStep1" class="wizard-step">
+      <div class="wizard-step-title">What does this app do?</div>
+      <div class="wizard-step-desc" style="line-height: 1.7;">
+        This app helps you answer two important questions about your pension:
+      </div>
+      <div style="margin: 20px 0; padding: 16px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+        <div style="margin-bottom: 16px;">
+          <strong style="color: var(--primary);">1. Stress Tester</strong>
+          <p style="margin: 8px 0 0 0; color: var(--text-muted); font-size: 14px; line-height: 1.6;">
+            "Can I afford to retire?" This tool runs 1,000 simulations using real historical market data to show you the range of possible outcomes for your pension. It helps you set realistic goals before you retire.
+          </p>
+        </div>
+        <div>
+          <strong style="color: var(--success);">2. Decision Tool</strong>
+          <p style="margin: 8px 0 0 0; color: var(--text-muted); font-size: 14px; line-height: 1.6;">
+            "Where should I take money from this month?" Once you're retired, this tool helps you decide each month which fund to withdraw from to maximise tax efficiency.
+          </p>
+        </div>
+      </div>
+      <div class="wizard-buttons">
+        <button class="secondary" onclick="skipAllWizards()">Skip Setup</button>
+        <button onclick="showIntroWizardStep(2)">Next</button>
+      </div>
+    </div>
+
+    <!-- Intro Step 2: Start with Stress Tester -->
+    <div id="introWizardStep2" class="wizard-step hidden">
+      <div class="wizard-step-title">Start with the Stress Tester</div>
+      <div class="wizard-step-desc" style="line-height: 1.7;">
+        Whether you're already retired or still planning, the Stress Tester is where you should start.
+      </div>
+      <div style="margin: 20px 0; padding: 16px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+        <p style="margin: 0 0 12px 0; color: var(--text); font-size: 14px; line-height: 1.6;">
+          The Stress Tester will help you understand:
+        </p>
+        <ul style="margin: 0; padding-left: 20px; color: var(--text-muted); font-size: 14px; line-height: 1.8;">
+          <li>How much yearly income your pension could realistically provide</li>
+          <li>How long your money might last under different market conditions</li>
+          <li>What happens if markets crash early in your retirement</li>
+          <li>Whether your current savings are on track</li>
+        </ul>
+      </div>
+      <div class="wizard-example">
+        <strong>Next:</strong> We'll set up your Stress Tester with some basic questions about your pension.
+      </div>
+      <div class="wizard-buttons">
+        <button class="secondary" onclick="showIntroWizardStep(1)">Back</button>
+        <button onclick="finishIntroWizard()">Set Up Stress Tester</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Stress Tester Setup Wizard -->
 <div id="stressWizardOverlay" class="wizard-overlay hidden">
   <div class="wizard-box">
-    <div class="wizard-title">Welcome to Stress Tester Setup</div>
+    <div class="wizard-title">Stress Tester Setup</div>
     <div class="wizard-subtitle">Let's set up your pension simulation in a few simple steps.</div>
     <div class="wizard-progress">
       <div id="stressWizardDot1" class="wizard-dot active"></div>
@@ -3589,8 +4063,8 @@ loadDecisionSettings = function() {
         <strong>Example:</strong> If you want £2,500 per month, enter £30,000 here.
       </div>
       <div class="wizard-buttons">
-        <button class="secondary" onclick="hideStressWizard()">Skip Setup</button>
-        <button onclick="showStressWizardStep(2)">Next →</button>
+        <button class="secondary" onclick="skipStressWizard()">Skip</button>
+        <button onclick="showStressWizardStep(2)">Next</button>
       </div>
     </div>
 
@@ -3609,8 +4083,8 @@ loadDecisionSettings = function() {
         <strong>Example:</strong> If you have a company pension paying £5,000/year, enter £5,000.
       </div>
       <div class="wizard-buttons">
-        <button class="secondary" onclick="showStressWizardStep(1)">← Back</button>
-        <button onclick="showStressWizardStep(3)">Next →</button>
+        <button class="secondary" onclick="showStressWizardStep(1)">Back</button>
+        <button onclick="showStressWizardStep(3)">Next</button>
       </div>
     </div>
 
@@ -3634,8 +4108,8 @@ loadDecisionSettings = function() {
         <strong>Example:</strong> If you're retiring at 55 and get State Pension at 67, enter year 12.
       </div>
       <div class="wizard-buttons">
-        <button class="secondary" onclick="showStressWizardStep(2)">← Back</button>
-        <button onclick="showStressWizardStep(4)">Next →</button>
+        <button class="secondary" onclick="showStressWizardStep(2)">Back</button>
+        <button onclick="showStressWizardStep(4)">Next</button>
       </div>
     </div>
 
@@ -3663,8 +4137,8 @@ loadDecisionSettings = function() {
         <strong>Tip:</strong> These are target minimums. The simulation draws from stocks/bonds first and keeps cash as an emergency buffer.
       </div>
       <div class="wizard-buttons">
-        <button class="secondary" onclick="showStressWizardStep(3)">← Back</button>
-        <button onclick="showStressWizardStep(5)">Next →</button>
+        <button class="secondary" onclick="showStressWizardStep(3)">Back</button>
+        <button onclick="showStressWizardStep(5)">Next</button>
       </div>
     </div>
 
@@ -3682,8 +4156,8 @@ loadDecisionSettings = function() {
         <strong>Example:</strong> If you're 55 and want money until age 90, enter 35 years.
       </div>
       <div class="wizard-buttons">
-        <button class="secondary" onclick="showStressWizardStep(4)">← Back</button>
-        <button onclick="showStressWizardStep(6)">Next →</button>
+        <button class="secondary" onclick="showStressWizardStep(4)">Back</button>
+        <button onclick="showStressWizardStep(6)">Next</button>
       </div>
     </div>
 
@@ -3695,16 +4169,16 @@ loadDecisionSettings = function() {
       </div>
       <div class="wizard-input">
         <select id="wizTaxMode">
-          <option value="inflates">Rise with inflation (optimistic)</option>
-          <option value="frozen">Stay frozen (pessimistic)</option>
+          <option value="inflates">Standard (rise with inflation)</option>
+          <option value="frozen">Frozen (stay at current levels)</option>
         </select>
       </div>
       <div class="wizard-example">
-        <strong>Tip:</strong> If unsure, "Rise with inflation" is a reasonable middle-ground assumption.
+        <strong>Tip:</strong> "Standard" assumes thresholds rise with inflation. "Frozen" means you'll pay more tax over time as your income grows but thresholds don't.
       </div>
       <div class="wizard-buttons">
-        <button class="secondary" onclick="showStressWizardStep(5)">← Back</button>
-        <button onclick="finishStressWizard()">Finish Setup ✓</button>
+        <button class="secondary" onclick="showStressWizardStep(5)">Back</button>
+        <button onclick="finishStressWizard()">Continue to Decision Tool</button>
       </div>
     </div>
   </div>
@@ -3713,8 +4187,8 @@ loadDecisionSettings = function() {
 <!-- Decision Tool Setup Wizard -->
 <div id="decisionWizardOverlay" class="wizard-overlay hidden">
   <div class="wizard-box">
-    <div class="wizard-title">Welcome to Decision Tool Setup</div>
-    <div class="wizard-subtitle">Let's configure your monthly drawdown tracking.</div>
+    <div class="wizard-title">Decision Tool Setup</div>
+    <div class="wizard-subtitle">Now let's set up the tool you'll use each month once you're retired.</div>
     <div class="wizard-progress">
       <div id="decisionWizardDot1" class="wizard-dot active"></div>
       <div id="decisionWizardDot2" class="wizard-dot"></div>
@@ -3737,8 +4211,8 @@ loadDecisionSettings = function() {
         <strong>Example:</strong> If you want about £2,000 per month after tax, you might need £30,000 gross.
       </div>
       <div class="wizard-buttons">
-        <button class="secondary" onclick="hideDecisionWizard()">Skip Setup</button>
-        <button onclick="showDecisionWizardStep(2)">Next →</button>
+        <button class="secondary" onclick="skipDecisionWizard()">Skip</button>
+        <button onclick="showDecisionWizardStep(2)">Next</button>
       </div>
     </div>
 
@@ -3766,8 +4240,8 @@ loadDecisionSettings = function() {
         <strong>Protection Mode:</strong> If your growth funds drop below these minimums, the tool recommends drawing from cash instead.
       </div>
       <div class="wizard-buttons">
-        <button class="secondary" onclick="showDecisionWizardStep(1)">← Back</button>
-        <button onclick="showDecisionWizardStep(3)">Next →</button>
+        <button class="secondary" onclick="showDecisionWizardStep(1)">Back</button>
+        <button onclick="showDecisionWizardStep(3)">Next</button>
       </div>
     </div>
 
@@ -3785,8 +4259,8 @@ loadDecisionSettings = function() {
         <strong>Example:</strong> If you're 55 and planning to age 90, enter 35 years.
       </div>
       <div class="wizard-buttons">
-        <button class="secondary" onclick="showDecisionWizardStep(2)">← Back</button>
-        <button onclick="showDecisionWizardStep(4)">Next →</button>
+        <button class="secondary" onclick="showDecisionWizardStep(2)">Back</button>
+        <button onclick="showDecisionWizardStep(4)">Next</button>
       </div>
     </div>
 
@@ -3806,12 +4280,15 @@ loadDecisionSettings = function() {
         <strong>Next Step:</strong> Go to "Tax Years" to set up your personal tax details (allowance, other income, state pension dates).
       </div>
       <div class="wizard-buttons">
-        <button class="secondary" onclick="showDecisionWizardStep(3)">← Back</button>
-        <button onclick="finishDecisionWizard()">Finish Setup ✓</button>
+        <button class="secondary" onclick="showDecisionWizardStep(3)">Back</button>
+        <button onclick="finishDecisionWizard()">Finish Setup</button>
       </div>
     </div>
   </div>
 </div>
+
+<!-- Version display -->
+<div style="position:fixed;bottom:8px;right:12px;font-size:11px;color:rgba(255,255,255,0.25);pointer-events:none;z-index:1;">V60</div>
 
 </body>
 </html>
